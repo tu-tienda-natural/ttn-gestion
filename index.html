@@ -1319,6 +1319,17 @@ body{
   }
 }
 
+
+/* ===== V243: editar vencimiento no altera stock negativo existente ===== */
+
+
+/* ===== V244: stock negativo mostrado como faltante ===== */
+.stock-missing{
+  color:#c62828 !important;
+  font-weight:900 !important;
+  white-space:nowrap;
+}
+
 </style>
 
 <style>
@@ -2663,7 +2674,7 @@ body{
 
    <div class="field">
     <label>Existencias actuales</label>
-    <input id="newProductStock" type="number" min="0" step="1" placeholder="Ej. 20">
+    <input id="newProductStock" type="number" step="1" placeholder="Ej. 20">
    </div>
 
    <div class="field">
@@ -6402,12 +6413,12 @@ function renderAlertsCenter(){
 
  document.getElementById("alertLowStock").innerHTML=
   lowStock.length?`<div class="followup-list">${lowStock.map(p=>
-   alertItem(productDisplayName(p,p.name||"Producto"),`Quedan ${Number(p.stock||0)} · mínimo ${Number(p.minStock||0)}`,"Reponer","pending")
+   alertItem(productDisplayName(p,p.name||"Producto"),`Quedan ${stockDisplay(p.stock)} · mínimo ${Number(p.minStock||0)}`,"Reponer","pending")
   ).join("")}</div>`:'<div class="sub">No hay productos por debajo del mínimo.</div>';
 
  document.getElementById("alertExcessStock").innerHTML=
   excessStock.length?`<div class="followup-list">${excessStock.map(p=>
-   alertItem(productDisplayName(p,p.name||"Producto"),`Hay ${Number(p.stock||0)} · mínimo ${Number(p.minStock||0)} · ${Number(p.excessQty||0)} por encima`,`+${Number(p.excessQty||0)}`,"paid")
+   alertItem(productDisplayName(p,p.name||"Producto"),`Hay ${stockDisplay(p.stock)} · mínimo ${Number(p.minStock||0)} · ${Number(p.excessQty||0)} por encima`,`+${Number(p.excessQty||0)}`,"paid")
   ).join("")}</div>`:'<div class="sub">No hay productos con 3 o más unidades por encima del mínimo.</div>';
 
  document.getElementById("alertExpiringProducts").innerHTML=
@@ -6416,7 +6427,7 @@ function renderAlertsCenter(){
    const diff=d?Math.ceil((d-todayDate)/86400000):9999;
    const expired=diff<0;
    const badge=expired?"VENCIDO":(diff===0?"VENCE ESTE MES":`${diff} DÍAS`);
-   const meta=`Vence ${formatExpiryMonth(p.expiry)} · ${Number(p.expiryStock||0)} unidad(es) con este vencimiento · Stock total ${Number(p.stock||0)}${p.supplier?` · ${p.supplier}`:""}`;
+   const meta=`Vence ${formatExpiryMonth(p.expiry)} · ${Number(p.expiryStock||0)} unidad(es) con este vencimiento · Stock total ${stockDisplay(p.stock)}${p.supplier?` · ${p.supplier}`:""}`;
    return alertItem(productDisplayName(p,p.name||"Producto"),meta,badge,"pending");
   }).join("")}</div>`:'<div class="sub">No hay productos vencidos ni próximos a vencer en los siguientes 30 días.</div>';
 
@@ -6457,7 +6468,7 @@ function renderHome(){
  dueFollowups.forEach(a=>actions.push(`<div class="followup-item"><div class="main"><div class="title">${a.customer||'Cliente'} · ${a.action||'Seguimiento'}</div><div class="meta">${a.date||today}${a.phone?` · ${a.phone}`:''}</div></div><span class="pill pending">${String(a.date||'')<today?'VENCIDO':'HOY'}</span></div>`));
  const ah=document.getElementById("homeTodayActions"); if(ah) ah.innerHTML=actions.length?`<div class="followup-list">${actions.slice(0,10).join('')}</div>`:'<div class="sub">No hay tareas ni seguimientos pendientes para hoy.</div>';
  const ph=document.getElementById("homePendingOrders"); if(ph) ph.innerHTML=pendingDispatch.length?`<div class="followup-list">${pendingDispatch.slice(0,8).map(r=>`<div class="followup-item"><div class="main"><div class="title">${r.customer||'Cliente'}</div><div class="meta">${r.date||''} · ${r.concept||'Pedido'} · ${COP(Number(r.sale||0))}</div></div></div>`).join('')}</div>`:'<div class="sub">No hay pedidos pendientes de despacho.</div>';
- const ih=document.getElementById("homeInventoryAlerts"); if(ih) ih.innerHTML=lowStock.length?`<div class="followup-list">${lowStock.slice(0,10).map(p=>`<div class="followup-item"><div class="main"><div class="title">${productDisplayName(p,p.name||'Producto')}</div><div class="meta">Stock ${Number(p.stock||0)} · mínimo ${Number(p.minStock||0)}</div></div><span class="pill pending">REPONER</span></div>`).join('')}</div>`:'<div class="sub">No hay productos por debajo del mínimo.</div>';
+ const ih=document.getElementById("homeInventoryAlerts"); if(ih) ih.innerHTML=lowStock.length?`<div class="followup-list">${lowStock.slice(0,10).map(p=>`<div class="followup-item"><div class="main"><div class="title">${productDisplayName(p,p.name||'Producto')}</div><div class="meta">Stock ${stockDisplay(p.stock)} · mínimo ${Number(p.minStock||0)}</div></div><span class="pill pending">REPONER</span></div>`).join('')}</div>`:'<div class="sub">No hay productos por debajo del mínimo.</div>';
 }
 function showHome(){
  document.getElementById("salesModule").style.display="none";
@@ -7211,6 +7222,19 @@ function renderSelectedInventoryProduct(key){
  card.querySelectorAll('.inventory-selected-media').forEach(btn=>btn.addEventListener('click',()=>openProductMedia(key,btn.dataset.tab)));
 }
 
+
+function stockDisplay(value){
+ const n=Number(value||0);
+ if(n<0) return `<span class="stock-missing">Faltan ${Math.abs(n)} unidad${Math.abs(n)===1?"":"es"}</span>`;
+ return String(n);
+}
+function stockAlertText(value){
+ const n=Number(value||0);
+ if(n<0) return `faltan ${Math.abs(n)} unidad${Math.abs(n)===1?"":"es"}`;
+ if(n===0) return "sin existencias";
+ return `quedan ${n}`;
+}
+
 function renderInventory(){
  refreshProductDatalists();
  ensureInventoryEntries();
@@ -7341,7 +7365,7 @@ function renderRegisteredProductHistory(){
     </div>
    </td>
    <td>${p.supplier||"—"}</td>
-   <td class="money">${Number(p.stock||0)}</td>
+   <td class="money">${stockDisplay(p.stock)}</td>
    <td>${p.created_by||"Histórico"}</td>
    <td>
     ${last
@@ -7562,7 +7586,12 @@ document.getElementById("saveProductBtn").addEventListener("click",()=>{
  const type=document.getElementById("newProductType").value;
  const contentQty=Math.max(0,Number(document.getElementById("newProductContentQty").value)||0);
  const contentUnit=document.getElementById("newProductContentUnit").value;
- const stock=Math.max(0,Math.floor(Number(document.getElementById("newProductStock").value)||0));
+ const stockRaw=Number(document.getElementById("newProductStock").value);
+ // Al editar, conservar exactamente el stock actual, incluso si es negativo.
+ // Así cambiar vencimiento u otros datos no fuerza -3 → 0 ni genera un ajuste falso.
+ const stock=editingInventoryProductKey
+  ? Math.floor(Number.isFinite(stockRaw)?stockRaw:Number(editingInventoryOriginalStock||0))
+  : Math.max(0,Math.floor(Number.isFinite(stockRaw)?stockRaw:0));
  const entryType=document.getElementById("newProductEntryType")?.value||"purchase";
  const cost=entryType==="sample" ? 0 : Math.max(0,window.TTNMoney?.parse?window.TTNMoney.parse(document.getElementById("newProductCost").value):Number(String(document.getElementById("newProductCost").value||"").replace(/\./g,""))||0);
  const salePrice=Math.max(0,window.TTNMoney?.parse?window.TTNMoney.parse(document.getElementById("newProductSalePrice").value):Number(String(document.getElementById("newProductSalePrice").value||"").replace(/\./g,""))||0);
@@ -11196,7 +11225,7 @@ document.getElementById("ventasNav")?.click();
    inv.filter(p=>Number(p.stock||0)<Number(p.minStock||0)).forEach(p=>rows.push({
     kind:'Inventario',
     style:'inventory',
-    text:`Reponer ${typeof productDisplayName==='function'?productDisplayName(p,p.name||'Producto'):(p.name||'Producto')} · quedan ${Number(p.stock||0)}`
+    text:`Reponer ${typeof productDisplayName==='function'?productDisplayName(p,p.name||'Producto'):(p.name||'Producto')} · quedan ${stockDisplay(p.stock)}`
    }));
   }catch(e){}
 
