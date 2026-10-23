@@ -1330,6 +1330,20 @@ body{
   white-space:nowrap;
 }
 
+
+/* ===== V245: selector simple de mes y año para vencimiento ===== */
+.expiry-picker{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.expiry-picker select{
+  width:100%;
+}
+@media(max-width:640px){
+  .expiry-picker{grid-template-columns:1fr;}
+}
+
 </style>
 
 <style>
@@ -2706,7 +2720,17 @@ body{
 
    <div class="field">
     <label>Mes y año de vencimiento</label>
-    <input id="newProductExpiry" type="month">
+    <div class="expiry-picker">
+      <select id="newProductExpiryMonth" aria-label="Mes de vencimiento">
+        <option value="">Mes</option>
+        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="newProductExpiryYear" aria-label="Año de vencimiento"></select>
+    </div>
+    <input id="newProductExpiry" type="hidden">
    </div>
 
    <div class="field">
@@ -2763,7 +2787,17 @@ body{
    </div>
    <div class="field">
     <label>Mes y año de vencimiento</label>
-    <input id="addStockExpiry" type="month">
+    <div class="expiry-picker">
+      <select id="addStockExpiryMonth" aria-label="Mes de vencimiento">
+        <option value="">Mes</option>
+        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+      <select id="addStockExpiryYear" aria-label="Año de vencimiento"></select>
+    </div>
+    <input id="addStockExpiry" type="hidden">
    </div>
   </div>
   <div id="addStockMsg" class="sub" style="margin-top:10px"></div>
@@ -6348,6 +6382,42 @@ function alertItem(title,meta,badge,badgeClass="pending"){
  </div>`;
 }
 
+
+function fillExpiryYearSelect(selectId, selectedYear=""){
+ const sel=document.getElementById(selectId);
+ if(!sel) return;
+ const current=new Date().getFullYear();
+ const start=current-1;
+ const end=current+15;
+ const wanted=String(selectedYear||"");
+ sel.innerHTML='<option value="">Año</option>' +
+  Array.from({length:end-start+1},(_,i)=>{
+   const y=String(start+i);
+   return `<option value="${y}" ${y===wanted?"selected":""}>${y}</option>`;
+  }).join("");
+}
+function syncExpiryPicker(hiddenId, monthId, yearId){
+ const m=document.getElementById(monthId)?.value||"";
+ const y=document.getElementById(yearId)?.value||"";
+ const hidden=document.getElementById(hiddenId);
+ if(hidden) hidden.value=(m&&y)?`${y}-${m}`:"";
+}
+function setExpiryPickerValue(hiddenId, monthId, yearId, value){
+ const ym=expiryMonthValue(value);
+ const [y,m]=ym?ym.split("-"):["",""];
+ fillExpiryYearSelect(yearId,y);
+ const month=document.getElementById(monthId);
+ const hidden=document.getElementById(hiddenId);
+ if(month) month.value=m||"";
+ if(hidden) hidden.value=ym||"";
+}
+function wireExpiryPicker(hiddenId, monthId, yearId){
+ const month=document.getElementById(monthId);
+ const year=document.getElementById(yearId);
+ if(month) month.addEventListener("change",()=>syncExpiryPicker(hiddenId,monthId,yearId));
+ if(year) year.addEventListener("change",()=>syncExpiryPicker(hiddenId,monthId,yearId));
+}
+
 function expiryMonthValue(value){
  const s=String(value||"").trim();
  if(!s) return "";
@@ -7472,7 +7542,7 @@ function fillProductForm(p,key){
  syncNewProductEntryType();
  document.getElementById("newProductSalePrice").value=Number(p?.salePrice||0)||"";
  document.getElementById("newProductSupplier").value=p?.supplier||"INTERNATURAL WORLD";
- document.getElementById("newProductExpiry").value=expiryMonthValue(p?.expiry||"");
+ setExpiryPickerValue("newProductExpiry","newProductExpiryMonth","newProductExpiryYear",p?.expiry||"");
  document.getElementById("newProductMinStock").value=p?.minStock??5;
  document.getElementById("productMsg").textContent="";
 
@@ -7488,6 +7558,7 @@ function fillProductForm(p,key){
 }
 
 function openInventoryProductEditor(key){
+ fillExpiryYearSelect("newProductExpiryYear");
  const p=INVENTORY[key];
  if(!p) return;
  fillProductForm(p,key);
@@ -11304,6 +11375,9 @@ document.getElementById("ventasNav")?.click();
  else initHeaderAlerts();
  window.refreshHeaderAlerts=renderHeaderAlert;
 })();
+
+wireExpiryPicker("newProductExpiry","newProductExpiryMonth","newProductExpiryYear");
+wireExpiryPicker("addStockExpiry","addStockExpiryMonth","addStockExpiryYear");
 </script>
 </body>
 </html>
