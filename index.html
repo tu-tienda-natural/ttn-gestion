@@ -7120,7 +7120,49 @@ function syncProductNearestExpiry(key){
  const p=INVENTORY[key];
  if(!p) return;
  const dated=activeExpiryEntriesForProduct(key).filter(e=>e.expiry);
- p.expiry=dated.length?dated[0].expiry:"";
+ // Si existen lotes con vencimiento, usar el más próximo.
+ // Si todavía no existen lotes fechados, conservar el vencimiento manual del producto.
+ if(dated.length) p.expiry=dated[0].expiry;
+}
+
+function syncEditedProductExpiryToEntries(key,expiry){
+ const ym=expiryMonthValue(expiry);
+ if(!key || !ym) return;
+ const entries=loadInventoryEntries();
+ let changed=false;
+
+ // Aplicar el vencimiento a existencias actuales que aún no tenían fecha.
+ // No sobrescribe lotes que ya tengan un vencimiento propio.
+ entries.forEach(e=>{
+  if(e.productKey===key && Number(e.qty||0)>0 && !expiryMonthValue(e.expiry)){
+   e.expiry=ym;
+   e.updated_by=currentUserName();
+   e.updated_by_user=currentUserUsername();
+   e.updated_at=new Date().toISOString();
+   changed=true;
+  }
+ });
+
+ // Si por algún motivo no existe entrada histórica para el stock actual,
+ // crear una entrada base con el vencimiento indicado.
+ const hasAny=entries.some(e=>e.productKey===key && Number(e.qty||0)>0);
+ const p=INVENTORY[key];
+ if(!hasAny && p && Number(p.stock||0)>0){
+  entries.push(creationAudit({
+   id:`expiry_fix_${key}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+   date:todayDateKey(),
+   productKey:key,
+   productName:p.name||key,
+   supplier:p.supplier||"",
+   qty:Number(p.stock||0),
+   unitCost:Number(p.cost||0),
+   expiry:ym,
+   source:"vencimiento registrado desde ficha de producto"
+  }));
+  changed=true;
+ }
+
+ if(changed) saveInventoryEntries(entries);
 }
 
 
@@ -7599,11 +7641,16 @@ document.getElementById("saveProductBtn").addEventListener("click",()=>{
   });
 
   saveInventory();
+  if(expiry){
+   syncEditedProductExpiryToEntries(key,expiry);
+   syncProductNearestExpiry(key);
+   saveInventory();
+  }
   const inventoryChange=stock-editingInventoryOriginalStock;
   logActivity(
    "Inventario",
    "Producto modificado",
-   `${name} · existencias ${editingInventoryOriginalStock} → ${stock}${inventoryChange!==0?` · ajuste ${inventoryChange>0?"+":""}${inventoryChange}`:""}${inventoryAdjustmentReason?` · Motivo: ${inventoryAdjustmentReason}`:""}`
+   `${name} · existencias ${editingInventoryOriginalStock} → ${stock}${inventoryChange!==0?` · ajuste ${inventoryChange>0?"+":""}${inventoryChange}`:""}${expiry?` · vencimiento ${formatExpiryMonth(expiry)}`:""}${inventoryAdjustmentReason?` · Motivo: ${inventoryAdjustmentReason}`:""}`
   );
 
   const delta=stock-editingInventoryOriginalStock;
