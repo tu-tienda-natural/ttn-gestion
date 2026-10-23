@@ -5185,7 +5185,7 @@ function renderDetail(){
 
   const body=document.getElementById("monthDetailBody");
   if(body){
-   body.innerHTML=`<tr><td colspan="9">
+   body.innerHTML=`<tr><td colspan="10">
     <div style="padding:24px;text-align:center">
      <div style="font-weight:900;font-size:16px;color:#374151">Histórico consolidado</div>
      <div class="sub" style="max-width:720px;margin:8px auto 0">
@@ -6992,7 +6992,7 @@ function renderRanking(){
    <td>${c.last||"—"}</td>
    <td>${c.top_product||"—"}</td>
   </tr>`;
- }).join(""):`<tr><td colspan="9" class="sub">No hay clientes con compras para este período.</td></tr>`;
+ }).join(""):`<tr><td colspan="10" class="sub">No hay clientes con compras para este período.</td></tr>`;
  document.querySelectorAll("#rankingBody .customer-history-link").forEach(btn=>{
   btn.addEventListener("click",()=>openCustomerHistory(btn.dataset.key,btn.dataset.name));
  });
@@ -7492,7 +7492,7 @@ function renderInventoryMovements(){
   return;
  }
  el.innerHTML=`<div class="sub" style="margin-bottom:8px">${rows.length} movimiento${rows.length===1?"":"s"} registrado${rows.length===1?"":"s"}.</div><div class="tablewrap"><table>
-  <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Proveedor</th><th>Cantidad</th><th>Costo unidad</th><th>Motivo / Detalle</th><th>Usuario</th><th>Vencimiento</th></tr></thead>
+  <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Proveedor</th><th>Cantidad</th><th>Costo unidad</th><th>Venta relacionada</th><th>Motivo / Detalle</th><th>Usuario</th><th>Vencimiento</th></tr></thead>
   <tbody>${rows.map(m=>{
    const detail=String(m.reason||m.adjustment_reason||m.source||"").trim()||"—";
    return `<tr>
@@ -9871,7 +9871,21 @@ document.getElementById("downloadGuideImageBtn").addEventListener("click",()=>{
 
 const INVENTORY_RETURN_STATUSES=new Set(["Devuelto","Cancelado"]);
 
-function restoreInventoryForSale(row,status="Cancelado"){
+function saleTraceLabel(row,meta={}){
+ const order=String(meta.order||row?.order||"").trim();
+ const customer=String(meta.customer||row?.customer||"Cliente").trim()||"Cliente";
+ const concept=String(meta.concept||row?.concept||"Venta").trim()||"Venta";
+ const sale=Number(meta.sale ?? row?.sale ?? 0);
+ const parts=[];
+ if(order) parts.push(`Pedido ${order}`);
+ parts.push(customer);
+ parts.push(concept);
+ if(sale>0) parts.push(COP(sale));
+ return parts.join(" · ");
+}
+
+
+function restoreInventoryForSale(row,status="Cancelado",meta={}){
  const deductions=row?.inventory_deductions;
  if(!deductions || typeof deductions!=="object") return false;
 
@@ -9890,7 +9904,10 @@ function restoreInventoryForSale(row,status="Cancelado"){
     supplier:INVENTORY[sku].supplier||"",
     qty:n,
     unitCost:Number(INVENTORY[sku].cost||INVENTORY[sku].unitCost||0),
-    reason:`Venta marcada como ${status}`,
+    customer:String(meta.customer||row?.customer||""),
+    concept:String(meta.concept||row?.concept||""),
+    sale_reference:String(meta.order||""),
+    reason:`${saleTraceLabel(row,meta)} · Venta marcada como ${status}`,
     lot:"",
     expiry:""
    }));
@@ -9900,12 +9917,12 @@ function restoreInventoryForSale(row,status="Cancelado"){
  if(restored){
   saveInventory();
   saveInventoryMovements(movements);
-  logActivity("Inventario","Productos reintegrados por estado de venta",`Las unidades de la venta regresaron al inventario porque quedó en estado ${status}.`);
+  logActivity("Inventario","Productos reintegrados por estado de venta",`${saleTraceLabel(row,meta)} · Las unidades regresaron al inventario porque la venta quedó en estado ${status}.`);
  }
  return restored;
 }
 
-function deductInventoryForReactivatedSale(row,newStatus){
+function deductInventoryForReactivatedSale(row,newStatus,meta={}){
  const deductions=row?.inventory_deductions;
  if(!deductions || typeof deductions!=="object") return {ok:true,changed:false};
 
@@ -9924,7 +9941,10 @@ function deductInventoryForReactivatedSale(row,newStatus){
     supplier:INVENTORY[sku].supplier||"",
     qty:-n,
     unitCost:Number(INVENTORY[sku].cost||INVENTORY[sku].unitCost||0),
-    reason:`Venta reactivada a estado ${newStatus}`,
+    customer:String(meta.customer||row?.customer||""),
+    concept:String(meta.concept||row?.concept||""),
+    sale_reference:String(meta.order||""),
+    reason:`${saleTraceLabel(row,meta)} · Venta reactivada a estado ${newStatus}`,
     lot:"",
     expiry:""
    }));
@@ -9934,13 +9954,13 @@ function deductInventoryForReactivatedSale(row,newStatus){
  if(changed){
   saveInventory();
   saveInventoryMovements(movements);
-  logActivity("Inventario","Inventario descontado por reactivación de venta",`La venta volvió a estado ${newStatus} y sus unidades fueron descontadas nuevamente.`);
+  logActivity("Inventario","Inventario descontado por reactivación de venta",`${saleTraceLabel(row,meta)} · La venta volvió a estado ${newStatus} y sus unidades fueron descontadas nuevamente.`);
  }
  return {ok:true,changed};
 }
 
-function restoreInventoryFromDeletedSale(row){
- return restoreInventoryForSale(row,"Cancelado");
+function restoreInventoryFromDeletedSale(row,meta={}){
+ return restoreInventoryForSale(row,"Cancelado",meta);
 }
 
 const OCTOBER_HISTORY_CORRECTION_MODE=false;
@@ -10004,7 +10024,12 @@ function deleteCurrentSale(){
  );
 
  const inventoryActive=saleHasInventoryEffect(current);
- const restored=inventoryActive?restoreInventoryFromDeletedSale(current):false;
+ const restored=inventoryActive?restoreInventoryFromDeletedSale(current,{
+  order,
+  customer:current.customer||"",
+  concept:current.concept||"",
+  sale:Number(current.sale||0)
+ }):false;
  if(restored){
   const latestUpdates=loadSaleUpdates();
   latestUpdates[key]=auditStamp({
@@ -10167,7 +10192,8 @@ document.getElementById("saveSaleDetailBtn").addEventListener("click",(event)=>{
       qty:-n,
       unitCost:Number(INVENTORY[sku].cost||INVENTORY[sku].unitCost||0),
       customer:correctedCustomer,
-      reason:"Se aplicó la nueva composición de productos de la venta editada.",
+      sale_reference:`${detailSaleContext.year}-${String(detailSaleContext.month).padStart(2,"0")}-${String(detailSaleContext.index+1).padStart(3,"0")}`,
+      reason:`Pedido ${detailSaleContext.year}-${String(detailSaleContext.month).padStart(2,"0")}-${String(detailSaleContext.index+1).padStart(3,"0")} · ${correctedCustomer||originalSale.customer||"Cliente"} · Se aplicó la nueva composición de productos de la venta editada.`,
       lot:"",
       expiry:INVENTORY[sku].expiry||""
      }));
@@ -10180,11 +10206,18 @@ document.getElementById("saveSaleDetailBtn").addEventListener("click",(event)=>{
   const wasReturnStatus=INVENTORY_RETURN_STATUSES.has(oldOrderStatus);
   const isReturnStatus=INVENTORY_RETURN_STATUSES.has(newOrderStatus);
   if(originalSale._annulled && wasReturnStatus && !inventoryReturned) inventoryReturned=true;
+  const traceOrder=`${detailSaleContext.year}-${String(detailSaleContext.month).padStart(2,"0")}-${String(detailSaleContext.index+1).padStart(3,"0")}`;
+  const traceMeta={
+   order:traceOrder,
+   customer:correctedCustomer||originalSale.customer||"",
+   concept:rebuilt.concept||originalSale.concept||"",
+   sale:Number(newSaleValue||originalSale.sale||0)
+  };
   if(isReturnStatus && !inventoryReturned){
-   const restored=restoreInventoryForSale(originalSale,newOrderStatus);
+   const restored=restoreInventoryForSale(originalSale,newOrderStatus,traceMeta);
    if(restored){ inventoryReturned=true; inventoryTransitionMessage=` Productos reintegrados al inventario por estado ${newOrderStatus}.`; }
   }else if(!isReturnStatus && inventoryReturned){
-   const rededuct=deductInventoryForReactivatedSale(originalSale,newOrderStatus);
+   const rededuct=deductInventoryForReactivatedSale(originalSale,newOrderStatus,traceMeta);
    if(rededuct.changed){ inventoryReturned=false; inventoryTransitionMessage=` Inventario descontado nuevamente al pasar a ${newOrderStatus}.`; }
   }
  }
