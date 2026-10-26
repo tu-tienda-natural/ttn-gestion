@@ -636,6 +636,110 @@ main{
 .promo-week-row:last-child{border-bottom:0}
 .promo-week-row .weekdates{font-weight:900}
 .promo-week-row .small{font-size:11px;color:#64748b}
+/* ===== V247: calendario comercial con ventas reales ===== */
+.promo-commercial-summary{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:8px;
+ margin:0 0 14px 0;
+}
+.promo-commercial-summary .commercial-kpi{
+ border:1px solid var(--line);
+ background:#fff;
+ border-radius:12px;
+ padding:10px 12px;
+ min-height:68px;
+}
+.promo-commercial-summary .commercial-label{
+ font-size:10px;
+ font-weight:800;
+ color:var(--muted);
+}
+.promo-commercial-summary .commercial-value{
+ font-size:17px;
+ line-height:1.05;
+ font-weight:950;
+ color:#0f172a;
+ margin-top:5px;
+}
+.promo-commercial-summary .commercial-detail{
+ font-size:9px;
+ color:#64748b;
+ margin-top:4px;
+}
+.promo-day .salesday{
+ font-size:10px;
+ font-weight:900;
+ color:#0f766e;
+ border-top:1px dashed #cbd5e1;
+ padding-top:5px;
+}
+.promo-day .salesday.zero{
+ color:#94a3b8;
+ font-weight:700;
+}
+.promo-week-row{
+ grid-template-columns:135px 1fr 1fr 145px 1fr auto;
+}
+.promo-week-sales{
+ border-left:3px solid #10b981;
+ padding-left:10px;
+}
+.promo-week-sales .week-total{
+ font-size:16px;
+ font-weight:950;
+ color:#0f172a;
+}
+.promo-week-sales .week-orders{
+ font-size:10px;
+ color:#64748b;
+ margin-top:2px;
+}
+.promo-week-detail{
+ grid-column:1/-1;
+ display:none;
+ background:#f8fafc;
+ border:1px solid var(--line);
+ border-radius:10px;
+ padding:8px;
+ margin-top:2px;
+}
+.promo-week-detail.open{display:block}
+.promo-week-day{
+ display:grid;
+ grid-template-columns:120px minmax(180px,1fr) 130px 80px;
+ gap:8px;
+ align-items:center;
+ padding:7px 8px;
+ border-bottom:1px solid #e5e7eb;
+}
+.promo-week-day:last-child{border-bottom:0}
+.promo-week-day .day-date{font-weight:900}
+.promo-week-day .day-promo{font-size:11px;color:#334155}
+.promo-week-day .day-sales{font-weight:900;text-align:right}
+.promo-week-day .day-orders{text-align:right;font-size:10px;color:#64748b}
+.promo-best-week{
+ font-size:10px;
+ font-weight:900;
+ color:#166534;
+ margin-top:3px;
+}
+@media(max-width:1100px){
+ .promo-commercial-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .promo-week-row{grid-template-columns:1fr 1fr 1fr}
+ .promo-week-row .weekdates,.promo-week-row .week-note,.promo-week-row .week-actions{grid-column:auto}
+ .promo-week-detail{grid-column:1/-1}
+}
+@media(max-width:700px){
+ .promo-commercial-summary{grid-template-columns:1fr 1fr}
+ .promo-week-row{grid-template-columns:1fr 1fr}
+ .promo-week-row .weekdates,.promo-week-row .week-note,.promo-week-row .week-actions,.promo-week-sales{grid-column:1/-1}
+ .promo-week-day{grid-template-columns:1fr 1fr}
+ .promo-week-day .day-sales,.promo-week-day .day-orders{text-align:left}
+}
+@media(max-width:480px){
+ .promo-commercial-summary{grid-template-columns:1fr}
+}
 @media(max-width:900px){
  .promo-calendar-toolbar{grid-template-columns:1fr 1fr}
  .promo-calendar-toolbar .wide-mobile{grid-column:1/-1}
@@ -1220,6 +1324,70 @@ body{
   line-height:1.02 !important;
   margin-top:2px !important;
 }
+
+/* ===== V246: ventas por semana ===== */
+#weeklySalesPanel{
+  margin:0 0 12px 0;
+}
+#weeklySalesPanel .weekly-sales-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:7px;
+}
+#weeklySalesPanel .weekly-sales-title{
+  font-size:13px;
+  font-weight:900;
+  color:#173f35;
+}
+#weeklySalesPanel .weekly-sales-note{
+  font-size:10px;
+  color:var(--muted);
+}
+#weeklySalesCards{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:8px;
+}
+#weeklySalesCards .week-card{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:12px;
+  padding:8px 10px;
+  min-height:66px;
+}
+#weeklySalesCards .week-name{
+  font-size:10px;
+  color:var(--muted);
+  font-weight:800;
+}
+#weeklySalesCards .week-range{
+  font-size:10px;
+  color:#64748b;
+  margin-top:2px;
+}
+#weeklySalesCards .week-value{
+  font-size:16px;
+  font-weight:950;
+  color:#0f172a;
+  margin-top:5px;
+  line-height:1.05;
+}
+#weeklySalesCards .week-count{
+  font-size:9px;
+  color:#64748b;
+  margin-top:3px;
+}
+@media(max-width:1200px){
+  #weeklySalesCards{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media(max-width:760px){
+  #weeklySalesCards{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:480px){
+  #weeklySalesCards{grid-template-columns:1fr;}
+}
 @media(max-width:1200px){
   #monthKpis{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
 }
@@ -1342,6 +1510,75 @@ body{
 }
 @media(max-width:640px){
   .expiry-picker{grid-template-columns:1fr;}
+}
+
+
+/* ===== V248: calendario semanal simple ===== */
+/* ===== V249: promociones unificadas en un solo módulo ===== */
+.promo-week-row.simple-week{
+ grid-template-columns:130px minmax(180px,1fr) minmax(150px,1fr) 160px auto !important;
+ align-items:center;
+}
+.promo-week-row.simple-week .promo-week-sales{
+ border-left:3px solid #10b981;
+ padding-left:10px;
+}
+.promo-week-row.simple-week .week-total{
+ font-size:17px;
+ font-weight:950;
+ color:#0f172a;
+ margin-top:3px;
+}
+@media(max-width:900px){
+ .promo-week-row.simple-week{
+  grid-template-columns:1fr 1fr !important;
+ }
+ .promo-week-row.simple-week .weekdates,
+ .promo-week-row.simple-week .promo-week-sales,
+ .promo-week-row.simple-week .week-actions{
+  grid-column:1/-1;
+ }
+}
+
+
+/* ===== V250: promociones creadas compactas + domingos cerrados ===== */
+.promotions-created-scroll{
+  max-height:285px !important;
+  overflow-y:auto !important;
+}
+.promotions-created-scroll thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#fff;
+}
+@media(max-width:700px){
+  .promotions-created-scroll{max-height:300px !important;}
+}
+
+
+/* ===== V251: ranking acumulado de promociones, 4 filas + scroll ===== */
+.promo-ranking-scroll{
+  max-height:285px !important;
+  overflow-y:auto !important;
+}
+.promo-ranking-scroll thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#fff;
+}
+@media(max-width:700px){
+  .promo-ranking-scroll{max-height:300px !important;}
+}
+
+
+/* ===== V252: festivos automáticos visibles ===== */
+.week-holiday{
+  margin-top:4px;
+  font-size:10px;
+  font-weight:900;
+  color:#b45309;
 }
 
 </style>
@@ -1528,11 +1765,6 @@ body{
   <strong>Corte de histórico:</strong> enero a septiembre de 2026 se conserva como información mensual consolidada.
   El detalle real venta por venta comienza desde octubre de 2026.
  </div>
-
- <div class="tabs" id="salesInternalTabs" style="margin-bottom:16px">
-  <button id="salesSectionBtn" class="tab active" type="button">Módulo de ventas</button>
-  <button id="salesPromotionsBtn" class="tab" type="button">Promociones</button>
- </div>
  <div class="pagehead">
   <div id="salesSectionHeading" style="display:none"><h1 id="salesSectionTitle"></h1><div class="sub" id="salesSectionSubtitle"></div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1541,7 +1773,6 @@ body{
     <option value="2025">2025</option>
    </select>
    <button id="globalNewSaleBtn" type="button" class="tab" style="background:var(--green);color:#fff;border-color:var(--green)">+ Agregar venta</button>
-   <button id="createPromoBtn" type="button" class="tab">+ Crear promoción</button>
    <button id="addMonthBtn" type="button" class="tab">+ Agregar mes</button>
   </div>
  </div>
@@ -1587,6 +1818,13 @@ body{
   </div>
 
   <div class="kpis" id="monthKpis"></div>
+  <div id="weeklySalesPanel">
+   <div class="weekly-sales-head">
+    <div class="weekly-sales-title">Ventas por semana</div>
+    <div class="weekly-sales-note">No incluye ventas canceladas ni devueltas</div>
+   </div>
+   <div id="weeklySalesCards"></div>
+  </div>
 
   <div class="tablewrap">
    <table>
@@ -1630,46 +1868,42 @@ body{
 
 
  </div>
-
- <section id="salesPromotionsSection" style="margin-top:22px;display:none">
-  <div class="pagehead" style="margin-bottom:12px">
-   <div>
-    <h2 style="font-size:24px;margin:0">Promociones</h2>
-    <div class="sub">Sección independiente dentro de Ventas para consultar y editar promociones.</div>
-   </div>
-  </div>
- <div class="panel" style="margin-bottom:14px">
-  <div class="panelhead">
-   <div><h2 style="font-size:18px">Promociones de venta</h2><div class="sub">Cada promoción tiene una receta de inventario. Haz clic en el nombre para revisarla o editarla.</div></div>
-  </div>
-  <div class="tablewrap" style="max-height:none">
-   <table>
-    <thead><tr><th>Promoción</th><th>Productos incluidos</th><th style="width:170px">Estado</th></tr></thead>
-    <tbody id="promotionsBody"></tbody>
-   </table>
-  </div>
- </div>
-
- </section>
-
-
-
- </div>
+</div>
 
  
  <section id="promotionsView" class="view">
   <div class="pagehead">
    <div>
     <h1>Promociones</h1>
-    <div class="sub">Compara qué promociones han generado más ventas y cuál campaña puntual funcionó mejor.</div>
+    <div class="sub">Crea, programa, consulta y analiza todas las promociones desde un solo lugar.</div>
+   </div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button id="createPromoBtn" type="button" class="tab" style="background:var(--green);color:#fff;border-color:var(--green)">+ Crear promoción</button>
+   </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:14px">
+   <div class="panelhead">
+    <div>
+     <h2 style="font-size:18px">Promociones creadas</h2>
+     <div class="sub">Aquí administras las promociones y su receta de inventario. Haz clic en una promoción para editarla.</div>
+    </div>
+   </div>
+   <div class="tablewrap promotions-created-scroll">
+    <table>
+     <thead>
+      <tr><th>Promoción</th><th>Productos incluidos</th><th style="width:170px">Estado</th></tr>
+     </thead>
+     <tbody id="promotionsBody"></tbody>
+    </table>
    </div>
   </div>
 
   <div class="panel" id="promoCalendarPanel" style="margin-bottom:14px">
    <div class="panelhead">
     <div>
-     <h2 style="font-size:20px">Calendario promocional</h2>
-     <div class="sub">Programa la promoción principal de lunes a viernes y una promoción distinta para el sábado. Los demás productos se pueden seguir vendiendo normalmente.</div>
+     <h2 style="font-size:20px">Calendario de promociones</h2>
+     <div class="sub">Programa las promociones por semana y revisa cuánto se vendió en cada semana.</div>
     </div>
    </div>
 
@@ -1700,8 +1934,8 @@ body{
 
    <div class="promo-calendar-head">
     <div>
-     <div style="font-weight:900">Programación por fecha</div>
-     <div class="sub">Verás exactamente qué promoción se impulsa cada día.</div>
+     <div style="font-weight:900">Promociones y ventas por fecha</div>
+     <div class="sub">Cada día muestra la promoción programada y la venta real registrada.</div>
     </div>
     <div class="promo-month-nav">
      <button id="promoCalendarPrev" type="button" class="btn" aria-label="Mes anterior">‹</button>
@@ -1712,7 +1946,7 @@ body{
    <div id="promoCalendarGrid" class="promo-calendar-grid"></div>
 
    <div class="promo-week-list">
-    <div style="font-weight:900;margin-bottom:6px">Semanas programadas</div>
+    <div style="font-weight:900;margin-bottom:6px">Promociones y ventas por semana</div>
     <div id="promoScheduleList"></div>
    </div>
   </div>
@@ -1731,7 +1965,7 @@ body{
      <option value="runs">Más veces realizada</option>
     </select>
    </div>
-   <div class="tablewrap" style="max-height:520px">
+   <div class="tablewrap promo-ranking-scroll">
     <table>
      <thead>
       <tr><th>#</th><th>Promoción / producto</th><th>Campañas</th><th>Meses</th><th class="money">Venta acumulada</th><th class="money">Promedio por campaña</th></tr>
@@ -4050,7 +4284,6 @@ document.getElementById("salesYearSelect").addEventListener("change",()=>{
  document.getElementById("monthChooser").style.display="block";
  document.getElementById("addMonthBtn").style.display=salesViewYear===2026?"inline-block":"none";
  document.getElementById("globalNewSaleBtn").style.display=salesViewYear===2026?"inline-block":"none";
- document.getElementById("createPromoBtn").style.display=salesViewYear===2026?"inline-block":"none";
 
  renderCompare();
  renderMonths();
@@ -5256,6 +5489,74 @@ const rawRows=getRowsForYearMonth(selectedYear,selectedMonth);
   ["Saldo pendiente",COP(pendingPayment)]
  ].map(x=>`<div class="kpi"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join("");
 
+ // V246: resumen real de ventas por semana (lunes a domingo).
+ const weeklyRows=rows.filter(x=>{
+  if(x._deleted) return false;
+  const st=orderStatusKey(x);
+  return st!=="cancelled" && st!=="returned";
+ });
+
+ function localDateFromKey(key){
+  const m=String(key||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0,0);
+ }
+ function dateKeyLocal(d){
+  return [
+   d.getFullYear(),
+   String(d.getMonth()+1).padStart(2,"0"),
+   String(d.getDate()).padStart(2,"0")
+  ].join("-");
+ }
+ function shortDate(d){
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+ }
+
+ const firstOfMonth=new Date(Number(selectedYear),Number(selectedMonth)-1,1,12,0,0,0);
+ const lastOfMonth=new Date(Number(selectedYear),Number(selectedMonth),0,12,0,0,0);
+ const firstMonday=new Date(firstOfMonth);
+ const mondayOffset=(firstMonday.getDay()+6)%7;
+ firstMonday.setDate(firstMonday.getDate()-mondayOffset);
+
+ const weekCards=[];
+ let weekStart=new Date(firstMonday);
+ let weekNum=1;
+ while(weekStart<=lastOfMonth){
+  const weekEnd=new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate()+6);
+
+  const visibleStart=weekStart<firstOfMonth ? new Date(firstOfMonth) : new Date(weekStart);
+  const visibleEnd=weekEnd>lastOfMonth ? new Date(lastOfMonth) : new Date(weekEnd);
+
+  const weekSales=weeklyRows.filter(x=>{
+   const d=localDateFromKey(x.date);
+   return d && d>=weekStart && d<=weekEnd;
+  });
+  const weekTotal=weekSales.reduce((a,b)=>a+Number(b.sale||0),0);
+
+  weekCards.push({
+   name:`Semana ${weekNum}`,
+   range:`${shortDate(visibleStart)} al ${shortDate(visibleEnd)}`,
+   total:weekTotal,
+   count:weekSales.length
+  });
+
+  weekStart.setDate(weekStart.getDate()+7);
+  weekNum++;
+ }
+
+ const weeklySalesCards=document.getElementById("weeklySalesCards");
+ if(weeklySalesCards){
+  weeklySalesCards.innerHTML=weekCards.map(w=>`
+   <div class="week-card">
+    <div class="week-name">${w.name}</div>
+    <div class="week-range">${w.range}</div>
+    <div class="week-value">${COP(w.total)}</div>
+    <div class="week-count">${w.count} venta${w.count===1?"":"s"} efectiva${w.count===1?"":"s"}</div>
+   </div>
+  `).join("");
+ }
+
  document.getElementById("salesBody").innerHTML=filtered.map(x=>{
   const idx=Number(x._index||0);
   const order=`${selectedYear}-${String(selectedMonth).padStart(2,"0")}-${String(idx+1).padStart(3,"0")}`;
@@ -5515,13 +5816,15 @@ function promoNameByKey(key){
  return key && BUNDLES[key] ? BUNDLES[key].name : "Sin programar";
 }
 function promoScheduleForDate(dateKey){
+ const d=promoDateLocal(dateKey), dow=d.getDay();
+ if(dow===0) return {key:"",name:"No hay atención",kind:"closed",row:null};
+ if(typeof promoIsBusinessDate==="function" && !promoIsBusinessDate(dateKey)) return {key:"",name:"No hay atención · Festivo",kind:"closed",row:null};
  const monday=promoMondayFor(dateKey);
  const row=loadPromoSchedule().find(x=>x.weekStart===monday);
  if(!row) return {key:"",name:"Sin programar",kind:"none",row:null};
- const d=promoDateLocal(dateKey), dow=d.getDay();
  if(dow>=1 && dow<=5) return {key:row.weekdayPromoKey||"",name:promoNameByKey(row.weekdayPromoKey),kind:"weekday",row};
  if(dow===6) return {key:row.saturdayPromoKey||"",name:promoNameByKey(row.saturdayPromoKey),kind:"saturday",row};
- return {key:"",name:"Sin promoción principal",kind:"sunday",row};
+ return {key:"",name:"No hay atención",kind:"closed",row:null};
 }
 function fillPromoScheduleOptions(){
  const options='<option value="">Sin programar</option>'+Object.entries(BUNDLES).map(([key,b])=>`<option value="${String(key).replace(/"/g,"&quot;")}">${b.name}</option>`).join("");
@@ -5575,54 +5878,241 @@ function renderPromoToday(){
  const d=promoDateLocal(today);
  const day=d.toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long"});
  const p=promoScheduleForDate(today);
+ const titleDay=day.charAt(0).toUpperCase()+day.slice(1);
+ if(p.kind==="closed"){
+  box.innerHTML=`<div><div class="today-title">${titleDay}</div><div class="today-promo">${p.name}</div><div class="today-meta">La tienda no tiene atención comercial este día.</div></div>`;
+  return;
+ }
  const badge=p.kind==="saturday"?"Promoción especial del sábado":p.kind==="weekday"?"Promoción principal de lunes a viernes":"Sin campaña principal";
- box.innerHTML=`<div><div class="today-title">Promoción de hoy · ${day.charAt(0).toUpperCase()+day.slice(1)}</div><div class="today-promo">${p.name}</div><div class="today-meta">${badge}${p.row?.note?` · ${p.row.note}`:""}</div></div><button type="button" class="btn" id="promoLoadCurrentWeekBtn">Editar esta semana</button>`;
+ box.innerHTML=`<div><div class="today-title">Promoción de hoy · ${titleDay}</div><div class="today-promo">${p.name}</div><div class="today-meta">${badge}${p.row?.note?` · ${p.row.note}`:""}</div></div><button type="button" class="btn" id="promoLoadCurrentWeekBtn">Editar esta semana</button>`;
  document.getElementById("promoLoadCurrentWeekBtn")?.addEventListener("click",()=>loadWeekScheduleIntoForm(today));
 }
+
+
+function promoNthMonday(year,monthIndex,day){
+ const d=new Date(year,monthIndex,day,12);
+ const dow=d.getDay();
+ const offset=(1-dow+7)%7;
+ d.setDate(d.getDate()+offset);
+ return promoDateKey(d);
+}
+function promoEasterSunday(year){
+ // Meeus/Jones/Butcher Gregorian algorithm.
+ const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4;
+ const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+ const h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+ const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+ const month=Math.floor((h+l-7*m+114)/31)-1;
+ const day=((h+l-7*m+114)%31)+1;
+ return new Date(year,month,day,12);
+}
+function promoNextMonday(date){
+ const d=new Date(date);
+ const dow=d.getDay();
+ if(dow===1) return promoDateKey(d);
+ const add=(8-dow)%7;
+ d.setDate(d.getDate()+add);
+ return promoDateKey(d);
+}
+function promoColombiaHolidays(year){
+ const set=new Set([
+  `${year}-01-01`,
+  `${year}-05-01`,
+  `${year}-07-20`,
+  `${year}-08-07`,
+  `${year}-12-08`,
+  `${year}-12-25`
+ ]);
+ // Ley Emiliani / holidays moved to Monday.
+ [
+  [0,6],   // Reyes
+  [2,19],  // San José
+  [5,29],  // San Pedro y San Pablo
+  [7,15],  // Asunción
+  [9,12],  // Día de la Raza
+  [10,1],  // Todos los Santos
+  [10,11]  // Independencia de Cartagena
+ ].forEach(([m,d])=>set.add(promoNextMonday(new Date(year,m,d,12))));
+ const easter=promoEasterSunday(year);
+ const addRel=(days)=>{
+  const d=new Date(easter); d.setDate(d.getDate()+days); return promoDateKey(d);
+ };
+ set.add(addRel(-3)); // Jueves Santo
+ set.add(addRel(-2)); // Viernes Santo
+ set.add(promoNextMonday(new Date(easter.getFullYear(),easter.getMonth(),easter.getDate()+39,12))); // Ascensión
+ set.add(promoNextMonday(new Date(easter.getFullYear(),easter.getMonth(),easter.getDate()+60,12))); // Corpus Christi
+ set.add(promoNextMonday(new Date(easter.getFullYear(),easter.getMonth(),easter.getDate()+68,12))); // Sagrado Corazón
+ return set;
+}
+function promoIsBusinessDate(dateKey){
+ const d=promoDateLocal(dateKey);
+ if(d.getDay()===0) return false; // domingo
+ return !promoColombiaHolidays(d.getFullYear()).has(dateKey);
+}
+function promoHolidayLabel(dateKey){
+ const d=promoDateLocal(dateKey);
+ if(d.getDay()===0) return "";
+ if(!promoColombiaHolidays(d.getFullYear()).has(dateKey)) return "";
+ return d.toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"}).replace(/\./g,"");
+}
+
+function promoEffectiveSalesRowsForMonth(year,month){
+ const raw=getRowsForYearMonth(Number(year),Number(month));
+ return raw.map((r,i)=>typeof mergedSale==="function"?mergedSale(Number(year),String(Number(month)),r,i):r)
+  .filter(r=>{
+   if(r._deleted) return false;
+   const st=typeof orderStatusKey==="function"?orderStatusKey(r):"";
+   return st!=="cancelled" && st!=="returned";
+  });
+}
+function promoSalesForDate(dateKey){
+ const d=promoDateLocal(dateKey);
+ const rows=promoEffectiveSalesRowsForMonth(d.getFullYear(),d.getMonth()+1)
+  .filter(r=>String(r.date||"")===String(dateKey));
+ return {
+  total:rows.reduce((s,r)=>s+Number(r.sale||0),0),
+  count:rows.length,
+  rows
+ };
+}
+function promoMonthSalesMetrics(cursor){
+ const y=cursor.getFullYear(),m=cursor.getMonth()+1;
+ const rows=promoEffectiveSalesRowsForMonth(y,m);
+ return {
+  total:rows.reduce((s,r)=>s+Number(r.sale||0),0),
+  count:rows.length,
+  rows
+ };
+}
+function promoWeeksForCursor(cursor){
+ const y=cursor.getFullYear(),m=cursor.getMonth();
+ const monthStart=new Date(y,m,1,12);
+ const monthEnd=new Date(y,m+1,0,12);
+ const firstMonday=new Date(monthStart);
+ const offset=(firstMonday.getDay()+6)%7;
+ firstMonday.setDate(firstMonday.getDate()-offset);
+ const weeks=[];
+ let ws=new Date(firstMonday),n=1;
+ while(ws<=monthEnd){
+  const we=new Date(ws);we.setDate(we.getDate()+6);
+  const visibleStart=ws<monthStart?new Date(monthStart):new Date(ws);
+  const visibleEnd=we>monthEnd?new Date(monthEnd):new Date(we);
+  const dates=[];
+  let d=new Date(visibleStart);
+  while(d<=visibleEnd){
+   dates.push(promoDateKey(d));
+   d.setDate(d.getDate()+1);
+  }
+  const dayMetrics=dates.map(date=>{
+   const sales=promoSalesForDate(date);
+   const promo=promoScheduleForDate(date);
+   return {date,sales,promo};
+  });
+  weeks.push({
+   n,
+   weekStart:promoDateKey(ws),
+   weekEnd:promoDateKey(we),
+   visibleStart:promoDateKey(visibleStart),
+   visibleEnd:promoDateKey(visibleEnd),
+   dayMetrics,
+   total:dayMetrics.reduce((s,x)=>s+x.sales.total,0),
+   count:dayMetrics.reduce((s,x)=>s+x.sales.count,0)
+  });
+  ws.setDate(ws.getDate()+7);n++;
+ }
+ return weeks;
+}
+function renderPromoCommercialSummary(){
+ const box=document.getElementById("promoCommercialSummary");
+ if(!box || !PROMO_CALENDAR_CURSOR) return;
+ const month=promoMonthSalesMetrics(PROMO_CALENDAR_CURSOR);
+ const weeks=promoWeeksForCursor(PROMO_CALENDAR_CURSOR);
+ const best=weeks.slice().sort((a,b)=>b.total-a.total)[0];
+ const scheduledDays=weeks.flatMap(w=>w.dayMetrics).filter(x=>x.promo?.key).length;
+ box.innerHTML=[
+  ["Ventas del mes",COP(month.total),`${month.count} venta${month.count===1?"":"s"} efectiva${month.count===1?"":"s"}`],
+  ["Mejor semana",best?COP(best.total):COP(0),best?`Semana ${best.n} · ${promoFormatShort(best.visibleStart)} al ${promoFormatShort(best.visibleEnd)}`:"Sin ventas"],
+  ["Promociones programadas",String(scheduledDays),scheduledDays===1?"1 día con promoción":"días con promoción"],
+  ["Promedio por venta",month.count?COP(month.total/month.count):COP(0),"Venta efectiva promedio"]
+ ].map(x=>`<div class="commercial-kpi"><div class="commercial-label">${x[0]}</div><div class="commercial-value">${x[1]}</div><div class="commercial-detail">${x[2]}</div></div>`).join("");
+}
+
 function renderPromoCalendar(){
  fillPromoScheduleOptions();
  if(!PROMO_CALENDAR_CURSOR){
-  const t=promoDateLocal(todayDateKey()); PROMO_CALENDAR_CURSOR=new Date(t.getFullYear(),t.getMonth(),1,12);
+  const t=promoDateLocal(todayDateKey());
+  PROMO_CALENDAR_CURSOR=new Date(t.getFullYear(),t.getMonth(),1,12);
  }
  renderPromoToday();
- const title=document.getElementById("promoCalendarMonthTitle");
- if(title) title.textContent=PROMO_CALENDAR_CURSOR.toLocaleDateString("es-CO",{month:"long",year:"numeric"}).replace(/^./,c=>c.toUpperCase());
- const grid=document.getElementById("promoCalendarGrid");
- if(grid){
-  const names=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-  let html=names.map(n=>`<div class="promo-day-name">${n}</div>`).join("");
-  const first=new Date(PROMO_CALENDAR_CURSOR.getFullYear(),PROMO_CALENDAR_CURSOR.getMonth(),1,12);
-  const jsDay=first.getDay(); const offset=jsDay===0?6:jsDay-1;
-  const start=new Date(first); start.setDate(first.getDate()-offset);
-  const today=todayDateKey();
-  for(let i=0;i<42;i++){
-   const d=new Date(start);d.setDate(start.getDate()+i);
-   const key=promoDateKey(d),p=promoScheduleForDate(key),outside=d.getMonth()!==PROMO_CALENDAR_CURSOR.getMonth(),dow=d.getDay();
-   const cls=["promo-day",outside?"outside":"",key===today?"today":"",dow===6?"saturday":"",dow===0?"sunday":""].filter(Boolean).join(" ");
-   const dayLabel=d.toLocaleDateString("es-CO",{weekday:"short"}).replace(/\./g,"");
-   html+=`<div class="${cls}" data-date="${key}"><div><span class="daynum">${d.getDate()}</span> <span class="daylabel">${dayLabel}</span></div><div class="promotag">${p.name}</div></div>`;
-  }
-  grid.innerHTML=html;
-  grid.querySelectorAll(".promo-day:not(.outside)").forEach(el=>el.addEventListener("click",()=>loadWeekScheduleIntoForm(el.dataset.date)));
- }
- const list=document.getElementById("promoScheduleList");
- if(list){
-  const rows=loadPromoSchedule().slice().sort((a,b)=>String(a.weekStart).localeCompare(String(b.weekStart)));
-  const monthStart=promoDateKey(new Date(PROMO_CALENDAR_CURSOR.getFullYear(),PROMO_CALENDAR_CURSOR.getMonth(),1,12));
-  const monthEnd=promoDateKey(new Date(PROMO_CALENDAR_CURSOR.getFullYear(),PROMO_CALENDAR_CURSOR.getMonth()+1,0,12));
-  const relevant=rows.filter(r=>promoAddDays(r.weekStart,6)>=monthStart && r.weekStart<=monthEnd);
-  list.innerHTML=relevant.length?relevant.map(r=>`<div class="promo-week-row">
-   <div class="weekdates">${promoFormatShort(r.weekStart)}<div class="small">hasta ${promoFormatShort(promoAddDays(r.weekStart,5))}</div></div>
-   <div><div class="small">Lunes a viernes</div><strong>${promoNameByKey(r.weekdayPromoKey)}</strong></div>
-   <div><div class="small">Sábado</div><strong>${promoNameByKey(r.saturdayPromoKey)}</strong></div>
-   <div class="week-note"><div class="small">Nota</div>${r.note||"—"}</div>
-   <div class="week-actions" style="display:flex;gap:6px"><button type="button" class="btn promo-edit-week" data-week="${r.weekStart}">Editar</button><button type="button" class="btn promo-delete-week" data-week="${r.weekStart}">Quitar</button></div>
-  </div>`).join(""):`<div class="sub">No hay semanas programadas en este mes.</div>`;
-  list.querySelectorAll(".promo-edit-week").forEach(b=>b.addEventListener("click",()=>loadWeekScheduleIntoForm(b.dataset.week)));
-  list.querySelectorAll(".promo-delete-week").forEach(b=>b.addEventListener("click",()=>deletePromoWeekSchedule(b.dataset.week)));
- }
-}
 
+ const title=document.getElementById("promoCalendarMonthTitle");
+ if(title){
+  title.textContent=PROMO_CALENDAR_CURSOR
+   .toLocaleDateString("es-CO",{month:"long",year:"numeric"})
+   .replace(/^./,c=>c.toUpperCase());
+ }
+
+ const grid=document.getElementById("promoCalendarGrid");
+ if(grid) grid.innerHTML="";
+
+ const list=document.getElementById("promoScheduleList");
+ if(!list) return;
+
+ const schedules=loadPromoSchedule();
+ const weeks=promoWeeksForCursor(PROMO_CALENDAR_CURSOR).map(w=>{
+  const validDays=w.dayMetrics.filter(x=>promoIsBusinessDate(x.date));
+  const holidays=w.dayMetrics
+   .filter(x=>promoHolidayLabel(x.date))
+   .map(x=>({date:x.date,label:promoHolidayLabel(x.date)}));
+  return {
+   ...w,
+   validDays,
+   holidays,
+   total:validDays.reduce((s,x)=>s+x.sales.total,0),
+   count:validDays.reduce((s,x)=>s+x.sales.count,0)
+  };
+ });
+
+ list.innerHTML=weeks.map(w=>{
+  const row=schedules.find(r=>r.weekStart===w.weekStart);
+  const weekdayPromo=row?promoNameByKey(row.weekdayPromoKey):"Sin programar";
+  const saturdayPromo=row?promoNameByKey(row.saturdayPromoKey):"Sin programar";
+
+  return `<div class="promo-week-row simple-week" data-week-row="${w.weekStart}">
+   <div class="weekdates">
+    <strong>Semana ${w.n}</strong>
+    <div class="small">${promoFormatShort(w.visibleStart)} al ${promoFormatShort(w.visibleEnd)}</div>
+    ${w.holidays?.length?`<div class="week-holiday">Festivo · No hay atención: ${w.holidays.map(h=>h.label).join(", ")}</div>`:""}
+   </div>
+
+   <div>
+    <div class="small">Promoción lunes a viernes</div>
+    <strong>${weekdayPromo}</strong>
+   </div>
+
+   <div>
+    <div class="small">Promoción sábado</div>
+    <strong>${saturdayPromo}</strong>
+   </div>
+
+   <div class="promo-week-sales">
+    <div class="small">Vendido en la semana</div>
+    <div class="week-total">${COP(w.total)}</div>
+   </div>
+
+   <div class="week-actions" style="display:flex;gap:6px;flex-wrap:wrap">
+    <button type="button" class="btn promo-edit-week" data-week="${w.weekStart}">Editar</button>
+    ${row?`<button type="button" class="btn promo-delete-week" data-week="${w.weekStart}">Quitar</button>`:""}
+   </div>
+  </div>`;
+ }).join("");
+
+ list.querySelectorAll(".promo-edit-week")
+  .forEach(b=>b.addEventListener("click",()=>loadWeekScheduleIntoForm(b.dataset.week)));
+
+ list.querySelectorAll(".promo-delete-week")
+  .forEach(b=>b.addEventListener("click",()=>deletePromoWeekSchedule(b.dataset.week)));
+}
 function updateSaleScheduledPromoHint(){
  const hint=document.getElementById("saleScheduledPromoHint"); if(!hint) return;
  const date=document.getElementById("saleDate")?.value||todayDateKey();
@@ -5704,6 +6194,7 @@ function showPromotionsModule(){
  document.getElementById("settingsView")?.classList.remove("active");
  document.getElementById("promotionsView").classList.add("active");
  setActiveNav("promotionsNav");
+ renderPromotions();
  renderPromotionsModule();
 }
 document.getElementById("promotionsNav").addEventListener("click",showPromotionsModule);
@@ -8039,7 +8530,6 @@ document.getElementById("ventasNav").addEventListener("click",()=>{
  document.getElementById("monthChooser").style.display="block";
  document.getElementById("addMonthBtn").style.display="inline-block";
  document.getElementById("globalNewSaleBtn").style.display="inline-block";
- document.getElementById("createPromoBtn").style.display="inline-block";
 
  renderCompare();
  renderMonths();
@@ -8051,35 +8541,14 @@ document.getElementById("ventasNav").addEventListener("click",()=>{
 
 
 
-function setSalesInternalSection(section){
- const isPromos=section==="promotions";
+function setSalesInternalSection(){
  const main=document.getElementById("salesMainContent");
- const promos=document.getElementById("salesPromotionsSection");
- const salesBtn=document.getElementById("salesSectionBtn");
- const promoBtn=document.getElementById("salesPromotionsBtn");
- const title=document.getElementById("salesSectionTitle");
- const subtitle=document.getElementById("salesSectionSubtitle");
- if(main) main.style.display=isPromos?"none":"block";
- if(promos) promos.style.display=isPromos?"block":"none";
- salesBtn?.classList.toggle("active",!isPromos);
- promoBtn?.classList.toggle("active",isPromos);
- if(title) title.textContent="";
- if(subtitle) subtitle.textContent="";
- if(isPromos){
-  document.getElementById("salesYearSelect").style.display="none";
-  document.getElementById("globalNewSaleBtn").style.display="none";
-  document.getElementById("addMonthBtn").style.display="none";
-  document.getElementById("createPromoBtn").style.display="inline-block";
-  if(typeof renderPromotionsTable==="function") renderPromotionsTable();
- }else{
-  document.getElementById("salesYearSelect").style.display="inline-block";
-  document.getElementById("globalNewSaleBtn").style.display="inline-block";
-  document.getElementById("createPromoBtn").style.display="inline-block";
-  document.getElementById("addMonthBtn").style.display="inline-block";
- }
+ if(main) main.style.display="block";
+ document.getElementById("salesYearSelect").style.display="inline-block";
+ document.getElementById("globalNewSaleBtn").style.display="inline-block";
+ document.getElementById("addMonthBtn").style.display="inline-block";
 }
-document.getElementById("salesSectionBtn")?.addEventListener("click",()=>setSalesInternalSection("sales"));
-document.getElementById("salesPromotionsBtn")?.addEventListener("click",()=>setSalesInternalSection("promotions"));
+
 
 
 function orderStatusFor(row){
