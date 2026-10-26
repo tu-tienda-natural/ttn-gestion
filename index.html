@@ -1666,6 +1666,26 @@ body{
   .header-inventory-mini{display:none}
 }
 
+
+/* ===== V254: editar semana lleva al formulario ===== */
+.promo-calendar-toolbar:focus-within{
+  outline:2px solid rgba(22,163,74,.22);
+  outline-offset:4px;
+  border-radius:12px;
+}
+
+
+/* ===== V256: promoción de gomitas surtidas ===== */
+.gummy-choice-row select{
+ width:100%;
+ min-width:0;
+}
+@media(max-width:560px){
+ .gummy-choice-row{
+  grid-template-columns:1fr !important;
+ }
+}
+
 </style>
 
 <style>
@@ -1945,12 +1965,6 @@ body{
    <div style="font-weight:900" id="compareYearTitle">Resumen y comparativo mensual 2026</div>
    <div class="sub">Haz clic en una barra para abrir ese mes.</div>
    <div class="bars" id="bars"></div>
-  </div>
-  <div id="monthlySummaryTable" style="margin-top:14px" class="panel">
-   <div style="font-weight:900;margin-bottom:10px">Resumen por mes</div>
-   <div class="tablewrap" style="max-height:none">
-    <table><thead><tr><th>Mes</th><th>Ventas</th><th class="money">Valor vendido</th><th class="money">Pagos registrados</th></tr></thead><tbody id="compareBody"></tbody></table>
-   </div>
   </div>
  </section>
 
@@ -2789,7 +2803,6 @@ body{
   </div>
  </section>
 
- <div class="future">Tu Tienda Natural ya incluye Ventas, Inventario, Promociones, Ranking de clientes, Contabilidad y Reportes. Pedidos, catálogo, cartera y reportes se agregarán como módulos separados.</div>
 </main>
 </div>
 
@@ -3307,6 +3320,11 @@ body{
      <select id="salePromoQty"></select>
      <div id="salePromoQtyHelp" class="sub" style="margin-top:5px">Selecciona una de las escalas configuradas para esta promoción.</div>
     </div>
+    <div id="saleGummyChoicesWrap" style="display:none;margin-top:12px;padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px">
+     <div style="font-weight:900;color:#166534">Elige las referencias de gomitas</div>
+     <div class="sub" style="margin-top:3px">Puedes mezclar referencias. El sistema descontará exactamente las que selecciones del inventario.</div>
+     <div id="saleGummyChoices"></div>
+    </div>
     <div id="saleRecipe" class="note" style="margin-top:10px"></div>
    </div>
 
@@ -3457,6 +3475,11 @@ body{
      <label id="detailPromoQtyLabel">Unidades / escala de la promoción</label>
      <select id="detailPromoQty"></select>
      <div id="detailPromoQtyHelp" class="sub" style="margin-top:5px">Selecciona una de las escalas configuradas para esta promoción.</div>
+    </div>
+    <div id="detailGummyChoicesWrap" style="display:none;margin-top:12px;padding:12px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px">
+     <div style="font-weight:900;color:#166534">Referencias de gomitas de esta venta</div>
+     <div class="sub" style="margin-top:3px">Selecciona las mismas referencias que recibió el cliente.</div>
+     <div id="detailGummyChoices"></div>
     </div>
    </div>
    <div id="detailProductSaleBox" style="grid-column:1/-1">
@@ -4257,6 +4280,157 @@ function loadInventory(){
  }catch(e){return JSON.parse(JSON.stringify(DEFAULT_INVENTORY));}
 }
 let INVENTORY=loadInventory();
+
+/* ===== V255: promoción Gomitas de Citrato de Magnesio ===== */
+function ensureGomitasCitratoPromotion(){
+ try{
+  const exists=Object.entries(BUNDLES||{}).some(([key,b])=>{
+   const n=normalizeText((b?.name||"")+" "+key);
+   return (n.includes("goma")||n.includes("gomita")) && n.includes("citrato") && n.includes("magnesio");
+  });
+  if(exists) return;
+
+  const inventoryEntry=Object.entries(INVENTORY||{}).find(([sku,p])=>{
+   const n=normalizeText((p?.name||"")+" "+sku);
+   return (n.includes("goma")||n.includes("gomita")) && n.includes("citrato") && n.includes("magnesio");
+  });
+  if(!inventoryEntry) return;
+
+  const [citratoSku]=inventoryEntry;
+
+  const vinagrePromo=Object.values(BUNDLES||{}).find(b=>{
+   const n=normalizeText(b?.name||"");
+   return (n.includes("goma")||n.includes("gomita")) && n.includes("vinagre");
+  });
+
+  const fallbackTiers=[
+   {qty:1,totalPrice:89900},
+   {qty:2,totalPrice:119900},
+   {qty:3,totalPrice:159900},
+   {qty:4,totalPrice:189900}
+  ];
+
+  const tiers=(vinagrePromo?.type==="quantity" && Array.isArray(vinagrePromo.tiers) && vinagrePromo.tiers.length)
+   ? vinagrePromo.tiers.map(t=>({qty:Number(t.qty)||1,totalPrice:normalizePromoMoneyValue(t.totalPrice)}))
+   : fallbackTiers;
+
+  const key="GOMITAS_CITRATO_MAGNESIO";
+  BUNDLES[key]={
+   name:"Gomitas de Citrato de Magnesio",
+   type:"quantity",
+   productSku:citratoSku,
+   tiers,
+   consumption:""
+  };
+  saveBundles();
+ }catch(e){
+  console.warn("No se pudo crear automáticamente la promoción de Gomitas de Citrato de Magnesio",e);
+ }
+}
+ensureGomitasCitratoPromotion();
+
+function ensureGomitasSurtidasPromotion(){
+ try{
+  const key="GOMITAS_SURTIDAS";
+  if(BUNDLES[key]) return;
+
+  const vinagrePromo=Object.values(BUNDLES||{}).find(b=>{
+   const n=normalizeText(b?.name||"");
+   return (n.includes("goma")||n.includes("gomita")) && n.includes("vinagre");
+  });
+
+  const fallbackTiers=[
+   {qty:1,totalPrice:89900},
+   {qty:2,totalPrice:119900},
+   {qty:3,totalPrice:159900},
+   {qty:4,totalPrice:189900}
+  ];
+
+  const tiers=(vinagrePromo?.tiers||[]).length
+   ? vinagrePromo.tiers.map(t=>({
+      qty:Number(t.qty)||1,
+      totalPrice:normalizePromoMoneyValue(t.totalPrice)
+     }))
+   : fallbackTiers;
+
+  BUNDLES[key]={
+   name:"Gomitas surtidas",
+   type:"flexible_gummies",
+   tiers,
+   consumption:"",
+   systemManaged:true
+  };
+  saveBundles();
+ }catch(e){
+  console.warn("No se pudo crear la promoción Gomitas surtidas",e);
+ }
+}
+ensureGomitasSurtidasPromotion();
+
+function gummyInventoryEntries(){
+ return Object.entries(INVENTORY||{})
+  .filter(([sku,p])=>{
+   const n=normalizeText((p?.name||"")+" "+(p?.presentation||"")+" "+(p?.type||"")+" "+sku);
+   return n.includes("gomita") || n.includes("goma");
+  })
+  .sort((a,b)=>String(a[1]?.name||"").localeCompare(String(b[1]?.name||""),"es"));
+}
+function gummySelectOptions(selected=""){
+ const options=gummyInventoryEntries().map(([sku,p])=>{
+  const label=productDisplayName(p,p?.name||sku);
+  return `<option value="${String(sku).replace(/"/g,"&quot;")}" ${sku===selected?"selected":""}>${label}</option>`;
+ }).join("");
+ return `<option value="">Selecciona una referencia</option>${options}`;
+}
+function selectedGummyDeductions(containerId){
+ const deductions={};
+ const selected=[];
+ const rows=[...document.querySelectorAll(`#${containerId} .gummy-choice-row`)];
+ let valid=rows.length>0;
+ rows.forEach(r=>{
+  const sku=r.querySelector(".gummy-choice-select")?.value||"";
+  if(!sku || !INVENTORY[sku]){ valid=false; return; }
+  deductions[sku]=(deductions[sku]||0)+1;
+  selected.push(sku);
+ });
+ return {valid,deductions,selected};
+}
+function renderGummyChoiceRows(containerId,qty,selectedSkus=[]){
+ const box=document.getElementById(containerId);
+ if(!box) return;
+ const n=Math.max(1,Number(qty)||1);
+ const saved=Array.isArray(selectedSkus)?selectedSkus:[];
+ box.innerHTML="";
+ for(let i=0;i<n;i++){
+  const row=document.createElement("div");
+  row.className="gummy-choice-row";
+  row.style.cssText="display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;margin-top:8px";
+  row.innerHTML=`<div style="font-size:12px;font-weight:900">Gomita ${i+1}</div><select class="gummy-choice-select">${gummySelectOptions(saved[i]||"")}</select>`;
+  box.appendChild(row);
+ }
+ box.querySelectorAll(".gummy-choice-select").forEach(sel=>{
+  sel.addEventListener("change",()=>{
+   if(containerId==="saleGummyChoices") refreshSalePromoValue();
+   if(containerId==="detailGummyChoices") refreshDetailSelection();
+  });
+ });
+}
+function syncFlexibleGummySelector(prefix,selectedSkus=[]){
+ const promoId=prefix==="detail"?"detailPromo":"salePromo";
+ const qtyId=prefix==="detail"?"detailPromoQty":"salePromoQty";
+ const wrapId=prefix==="detail"?"detailGummyChoicesWrap":"saleGummyChoicesWrap";
+ const containerId=prefix==="detail"?"detailGummyChoices":"saleGummyChoices";
+ const code=document.getElementById(promoId)?.value||"";
+ const b=BUNDLES[code];
+ const wrap=document.getElementById(wrapId);
+ if(!wrap) return;
+ const isFlexible=b?.type==="flexible_gummies";
+ wrap.style.display=isFlexible?"block":"none";
+ if(isFlexible){
+  const qty=Math.max(1,Number(document.getElementById(qtyId)?.value)||1);
+  renderGummyChoiceRows(containerId,qty,selectedSkus);
+ }
+}
 
 function costSnapshotFromDeductions(deductions){
  return Object.entries(deductions||{}).reduce((sum,[sku,qty])=>{
@@ -5090,6 +5264,14 @@ function openSaleDetail(year,month,row,index){
    const promoQty=inferPromoQtyFromSale(x,code);
    syncDetailPromoQtyOptions(promoQty);
    document.getElementById("detailPromoQty").value=String(promoQty);
+   if(BUNDLES[code]?.type==="flexible_gummies"){
+    const selected=[];
+    Object.entries(existingDeductions).forEach(([sku,totalQty])=>{
+     const net=Math.max(0,Number(totalQty||0)-Number(existingGiftDeductions[sku]||0));
+     for(let i=0;i<net;i++) selected.push(sku);
+    });
+    syncFlexibleGummySelector("detail",selected.slice(0,promoQty));
+   }
   }
  }else if(savedMode==="special" && (Array.isArray(x.special_products)||Array.isArray(x.special_promos))){
   (Array.isArray(x.special_products)?x.special_products:[]).forEach(p=>addDetailProductRow(p.sku,p.qty));
@@ -5768,6 +5950,10 @@ function promoKeyFromName(name){
   .replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"");
 }
 function promoDescription(bundle){
+ if(bundle.type==="flexible_gummies"){
+  const tiers=(bundle.tiers||[]).map(t=>`${t.qty} gomita${Number(t.qty)===1?"":"s"} = ${COP(normalizePromoMoneyValue(t.totalPrice))}`).join(" · ");
+  return `Cualquier referencia de gomitas · ${tiers}`;
+ }
  if(bundle.type==="quantity"){
   const p=INVENTORY[bundle.productSku];
   const tiers=(bundle.tiers||[]).map(t=>`${t.qty} und = ${COP(normalizePromoMoneyValue(t.totalPrice))}`).join(" · ");
@@ -5922,7 +6108,7 @@ function fillPromoScheduleOptions(){
  if(a){const old=a.value;a.innerHTML=options;if([...a.options].some(o=>o.value===old))a.value=old;}
  if(b){const old=b.value;b.innerHTML=options;if([...b.options].some(o=>o.value===old))b.value=old;}
 }
-function loadWeekScheduleIntoForm(dateKey){
+function loadWeekScheduleIntoForm(dateKey,goToForm=false){
  const monday=promoMondayFor(dateKey||todayDateKey());
  const input=document.getElementById("promoWeekStart"); if(input) input.value=monday;
  const row=loadPromoSchedule().find(x=>x.weekStart===monday);
@@ -5930,6 +6116,24 @@ function loadWeekScheduleIntoForm(dateKey){
  if(wd) wd.value=row?.weekdayPromoKey||"";
  if(sa) sa.value=row?.saturdayPromoKey||"";
  if(note) note.value=row?.note||"";
+
+ if(goToForm){
+  const formTarget=input?.closest(".promo-calendar-toolbar") || input;
+  if(formTarget){
+   setTimeout(()=>{
+    formTarget.scrollIntoView({behavior:"smooth",block:"center"});
+    setTimeout(()=>{ try{ wd?.focus({preventScroll:true}); }catch(e){ wd?.focus(); } },450);
+   },30);
+  }
+  const msg=document.getElementById("promoScheduleMsg");
+  if(msg){
+   msg.style.color="#166534";
+   msg.textContent=`Semana ${promoFormatShort(monday)} cargada para editar.`;
+   setTimeout(()=>{
+    if(msg.textContent.includes("cargada para editar")) msg.textContent="";
+   },3000);
+  }
+ }
 }
 function savePromoWeekSchedule(){
  const raw=document.getElementById("promoWeekStart")?.value||todayDateKey();
@@ -5975,7 +6179,7 @@ function renderPromoToday(){
  }
  const badge=p.kind==="saturday"?"Promoción especial del sábado":p.kind==="weekday"?"Promoción principal de lunes a viernes":"Sin campaña principal";
  box.innerHTML=`<div><div class="today-title">Promoción de hoy · ${titleDay}</div><div class="today-promo">${p.name}</div><div class="today-meta">${badge}${p.row?.note?` · ${p.row.note}`:""}</div></div><button type="button" class="btn" id="promoLoadCurrentWeekBtn">Editar esta semana</button>`;
- document.getElementById("promoLoadCurrentWeekBtn")?.addEventListener("click",()=>loadWeekScheduleIntoForm(today));
+ document.getElementById("promoLoadCurrentWeekBtn")?.addEventListener("click",()=>loadWeekScheduleIntoForm(today,true));
 }
 
 
@@ -6198,7 +6402,7 @@ function renderPromoCalendar(){
  }).join("");
 
  list.querySelectorAll(".promo-edit-week")
-  .forEach(b=>b.addEventListener("click",()=>loadWeekScheduleIntoForm(b.dataset.week)));
+  .forEach(b=>b.addEventListener("click",()=>loadWeekScheduleIntoForm(b.dataset.week,true)));
 
  list.querySelectorAll(".promo-delete-week")
   .forEach(b=>b.addEventListener("click",()=>deletePromoWeekSchedule(b.dataset.week)));
@@ -8745,6 +8949,12 @@ function recipeText(code,qty){
  qty=Number(qty)||1;
  if(BUNDLES[code]){
   const b=BUNDLES[code];
+  if(b.type==="flexible_gummies"){
+   const selected=selectedGummyDeductions("saleGummyChoices");
+   if(!selected.selected.length) return `Selecciona ${qty} referencia${qty===1?"":"s"} de gomitas para descontar del inventario.`;
+   const parts=selected.selected.map(sku=>productDisplayName(INVENTORY[sku],INVENTORY[sku]?.name||sku));
+   return `Inventario a descontar: ${parts.join(" + ")}`;
+  }
   if(b.type==="quantity"){
    const tier=(b.tiers||[]).find(t=>Number(t.qty)===qty);
    const p=INVENTORY[b.productSku];
@@ -8813,7 +9023,9 @@ function fillPromoOptions(){
  const entries=Object.entries(BUNDLES);
  sel.innerHTML=entries.map(([key,b])=>{
   let usable=true;
-  if(b.type==="quantity"){
+  if(b.type==="flexible_gummies"){
+   usable=gummyInventoryEntries().length>0 && (b.tiers||[]).length>0;
+  }else if(b.type==="quantity"){
    usable=!!(b.productSku && INVENTORY[b.productSku] && (b.tiers||[]).length);
   }else{
    usable=Object.entries(b.components||{}).some(([sku,v])=>INVENTORY[sku] && Number(v?.qty||v)>0);
@@ -8839,22 +9051,24 @@ function syncSalePromoQtyOptions(preferredQty=1){
   return;
  }
  let quantities=[];
- if(b.type==="quantity"){
+ if(b.type==="quantity" || b.type==="flexible_gummies"){
   quantities=(b.tiers||[]).map(t=>Number(t.qty)||0).filter(q=>q>0).sort((a,b)=>a-b);
-  if(help) help.textContent="Solo aparecen las unidades que tienen precio configurado en esta promoción.";
+  if(help) help.textContent=b.type==="flexible_gummies"
+   ?"Selecciona cuántas gomitas llevará la promoción; luego elige las referencias."
+   :"Solo aparecen las unidades que tienen precio configurado en esta promoción.";
  }else{
   quantities=[1,2,3,4,5,6,7,8,9,10];
   if(help) help.textContent="Selecciona cuántos kits de esta promoción se vendieron.";
  }
  if(!quantities.length) quantities=[1];
- qtySel.innerHTML=quantities.map(q=>`<option value="${q}">${q}${b.type==="quantity"?" unidad"+(q===1?"":"es"):" kit"+(q===1?"":"s")}</option>`).join("");
+ qtySel.innerHTML=quantities.map(q=>`<option value="${q}">${q}${(b.type==="quantity"||b.type==="flexible_gummies")?" unidad"+(q===1?"":"es"):" kit"+(q===1?"":"s")}</option>`).join("");
  const pref=Number(preferredQty)||1;
  qtySel.value=quantities.includes(pref)?String(pref):String(quantities[0]);
 }
 function salePromoPrice(code,qty){
  const b=BUNDLES[code];
  if(!b) return 0;
- if(b.type==="quantity"){
+ if(b.type==="quantity" || b.type==="flexible_gummies"){
   const tier=(b.tiers||[]).find(t=>Number(t.qty)===Number(qty));
   return normalizePromoMoneyValue(tier?.totalPrice||0);
  }
@@ -8863,6 +9077,9 @@ function salePromoPrice(code,qty){
 function refreshSalePromoValue(){
  const code=document.getElementById("salePromo")?.value||"";
  const qty=Math.max(1,Number(document.getElementById("salePromoQty")?.value)||1);
+ const b=BUNDLES[code];
+ const wrap=document.getElementById("saleGummyChoicesWrap");
+ if(wrap && b?.type!=="flexible_gummies") wrap.style.display="none";
  const value=salePromoPrice(code,qty);
  if(value>0){
   document.getElementById("saleValue").value=window.TTNMoney?.format?window.TTNMoney.format(value):value;
@@ -9087,7 +9304,11 @@ function inferPromoCodeFromSale(sale){
  if(!keys.length) return "";
  for(const [code,b] of entries){
   if(b?.type==="quantity"){
-   if(b.productSku && keys.length===1 && keys[0]===b.productSku) return code;
+   if(b.type==="flexible_gummies"){
+   const allGummies=keys.length>0 && keys.every(k=>gummyInventoryEntries().some(([sku])=>sku===k));
+   if(allGummies) return code;
+  }
+  if(b.productSku && keys.length===1 && keys[0]===b.productSku) return code;
   }else{
    const compKeys=Object.entries(b?.components||{})
     .filter(([,v])=>Number(v?.qty||v)>0)
@@ -9103,6 +9324,13 @@ function inferPromoQtyFromSale(sale,code){
  const m=String(sale?.concept||"").match(/^\s*(\d+)\s*x\s*/i);
  if(m) return Math.max(1,Number(m[1])||1);
  const b=BUNDLES[code];
+ if(b?.type==="flexible_gummies"){
+  const gift=sale?.gift_deductions||{};
+  const total=Object.entries(sale?.inventory_deductions||{}).reduce((sum,[sku,q])=>{
+   return sum+Math.max(0,Number(q||0)-Number(gift[sku]||0));
+  },0);
+  return Math.max(1,total||Number(sale?.promo_qty||1));
+ }
  if(b?.type==="quantity" && b.productSku){
   return Math.max(1,Number(sale?.inventory_deductions?.[b.productSku]||1));
  }
@@ -9135,24 +9363,26 @@ function syncDetailPromoQtyOptions(preferredQty=1){
   return;
  }
  let quantities=[];
- if(b.type==="quantity"){
+ if(b.type==="quantity" || b.type==="flexible_gummies"){
   quantities=(b.tiers||[])
    .map(t=>Number(t.qty)||0)
    .filter(q=>q>0)
    .sort((a,b)=>a-b);
-  if(help) help.textContent="Solo aparecen las unidades que tienen precio configurado en esta promoción.";
+  if(help) help.textContent=b.type==="flexible_gummies"
+   ?"Selecciona cuántas gomitas lleva la promoción y luego las referencias."
+   :"Solo aparecen las unidades que tienen precio configurado en esta promoción.";
  }else{
   quantities=[1,2,3,4,5,6,7,8,9,10];
   if(help) help.textContent="Selecciona cuántos kits de esta promoción se vendieron.";
  }
  if(!quantities.length) quantities=[1];
- qtySel.innerHTML=quantities.map(q=>`<option value="${q}">${q}${b.type==="quantity"?" unidad"+(q===1?"":"es"):" kit"+(q===1?"":"s")}</option>`).join("");
+ qtySel.innerHTML=quantities.map(q=>`<option value="${q}">${q}${(b.type==="quantity"||b.type==="flexible_gummies")?" unidad"+(q===1?"":"es"):" kit"+(q===1?"":"s")}</option>`).join("");
  const pref=Number(preferredQty)||1;
  qtySel.value=quantities.includes(pref)?String(pref):String(quantities[0]);
 }
 function detailPromoPrice(code,qty){
  const b=BUNDLES[code]; if(!b) return 0;
- if(b.type==="quantity"){
+ if(b.type==="quantity" || b.type==="flexible_gummies"){
   const tier=(b.tiers||[]).find(t=>Number(t.qty)===Number(qty));
   return normalizePromoMoneyValue(tier?.totalPrice||0);
  }
@@ -9200,7 +9430,15 @@ function detailBuildSelection(){
   if(!b) return {valid:false,message:"Selecciona una promoción válida."};
   promoCode=code; promoQty=qty; promoName=b.name||code;
   concept=(qty>1?qty+" x ":"")+promoName; saleValue=detailPromoPrice(code,qty);
-  if(b.type==="quantity"){ if(!b.productSku) valid=false; else deductions[b.productSku]=(deductions[b.productSku]||0)+qty; }
+  if(b.type==="flexible_gummies"){
+   const picked=selectedGummyDeductions("detailGummyChoices");
+   if(!picked.valid || picked.selected.length!==qty) valid=false;
+   else{
+    Object.entries(picked.deductions).forEach(([sku,n])=>deductions[sku]=(deductions[sku]||0)+n);
+    const names=picked.selected.map(sku=>productDisplayName(INVENTORY[sku],INVENTORY[sku]?.name||sku));
+    concept=`${promoName}: ${names.join(" + ")}`;
+   }
+  }else if(b.type==="quantity"){ if(!b.productSku) valid=false; else deductions[b.productSku]=(deductions[b.productSku]||0)+qty; }
   else Object.entries(b.components||{}).forEach(([sku,v])=>{ const n=Number(v?.qty||v)||0; if(n>0) deductions[sku]=(deductions[sku]||0)+n*qty; });
  }else{
   const parts=[], rows=[...document.querySelectorAll(".detail-product-row")];
@@ -9243,7 +9481,10 @@ function toggleDetailSaleMode(){
  document.getElementById("detailProductSaleBox").style.display=promo?"none":"block";
  const hint=document.getElementById("detailSpecialHint"); if(hint) hint.style.display=special?"block":"none";
  const block=document.getElementById("detailSpecialPromoBlock"); if(block) block.style.display=special?"block":"none";
- if(promo) syncDetailPromoQtyOptions(Number(document.getElementById("detailPromoQty")?.value)||1);
+ if(promo){
+  syncDetailPromoQtyOptions(Number(document.getElementById("detailPromoQty")?.value)||1);
+  syncFlexibleGummySelector("detail");
+ }
  refreshDetailSelection();
 }
 function addDetailProductRow(sku="",qty=1){
@@ -9748,6 +9989,10 @@ let editingPromoKey=null;
 function loadPromotionIntoForm(key){
  const b=BUNDLES[key];
  if(!b) return;
+ if(b.type==="flexible_gummies"){
+  alert("Esta promoción es flexible: las referencias de gomitas se eligen al registrar cada venta. Los precios siguen las escalas configuradas para gomitas.");
+  return;
+ }
 
  editingPromoKey=key;
  const deletePromoBtn=document.getElementById("deletePromoBtn");
@@ -9989,6 +10234,7 @@ function openSaleModal(){
   try{ updateSaleDeliverySplit(); }catch(e){ console.error(e); }
  }else{
   syncSalePromoQtyOptions(1);
+  syncFlexibleGummySelector("sale");
   document.getElementById("saleValue").value="";
   refreshSalePromoValue();
  }
@@ -10022,9 +10268,13 @@ document.querySelectorAll('input[name="saleMode"]').forEach(r=>r.addEventListene
 document.getElementById("addGiftRowBtn")?.addEventListener("click",()=>addGiftRow());
 document.getElementById("salePromo").addEventListener("change",()=>{
  syncSalePromoQtyOptions(1);
+ syncFlexibleGummySelector("sale");
  refreshSalePromoValue();
 });
-document.getElementById("salePromoQty").addEventListener("change",refreshSalePromoValue);
+document.getElementById("salePromoQty").addEventListener("change",()=>{
+ syncFlexibleGummySelector("sale");
+ refreshSalePromoValue();
+});
 document.getElementById("saleCustomer").addEventListener("input",renderCustomerMatch);
 document.getElementById("salePhone").addEventListener("input",renderCustomerMatch);
 document.getElementById("saleStation").addEventListener("change",()=>{
@@ -10121,7 +10371,7 @@ document.getElementById("saveSaleBtn").addEventListener("click",()=>{
    return;
   }
 
-  if(BUNDLES[code]?.type==="quantity"){
+  if(BUNDLES[code]?.type==="quantity" || BUNDLES[code]?.type==="flexible_gummies"){
    const tier=(BUNDLES[code].tiers||[]).find(t=>Number(t.qty)===qty);
    if(!tier){
     document.getElementById("saleMsg").textContent="Esa cantidad no tiene precio configurado en la promoción.";
@@ -10142,7 +10392,16 @@ document.getElementById("saveSaleBtn").addEventListener("click",()=>{
   promoName=BUNDLES[code].name||code;
   concept=(qty>1?qty+" x ":"")+promoName;
 
-  if(BUNDLES[code].type==="quantity"){
+  if(BUNDLES[code].type==="flexible_gummies"){
+   const picked=selectedGummyDeductions("saleGummyChoices");
+   if(!picked.valid || picked.selected.length!==qty){
+    document.getElementById("saleMsg").textContent=`Selecciona exactamente ${qty} referencia${qty===1?"":"s"} de gomitas.`;
+    return;
+   }
+   Object.entries(picked.deductions).forEach(([sku,n])=>deductions[sku]=(deductions[sku]||0)+n);
+   const names=picked.selected.map(sku=>productDisplayName(INVENTORY[sku],INVENTORY[sku]?.name||sku));
+   concept=`${promoName}: ${names.join(" + ")}`;
+  }else if(BUNDLES[code].type==="quantity"){
    const sku=BUNDLES[code].productSku;
    deductions[sku]=(deductions[sku]||0)+qty;
   }else{
@@ -10896,9 +11155,13 @@ document.getElementById("saveSaleDetailBtn").addEventListener("click",(event)=>{
 document.querySelectorAll('input[name="detailSaleMode"]').forEach(r=>r.addEventListener("change",toggleDetailSaleMode));
 document.getElementById("detailPromo")?.addEventListener("change",()=>{
  syncDetailPromoQtyOptions(1);
+ syncFlexibleGummySelector("detail");
  refreshDetailSelection();
 });
-document.getElementById("detailPromoQty")?.addEventListener("change",refreshDetailSelection);
+document.getElementById("detailPromoQty")?.addEventListener("change",()=>{
+ syncFlexibleGummySelector("detail");
+ refreshDetailSelection();
+});
 document.getElementById("detailAddProductBtn")?.addEventListener("click",()=>addDetailProductRow());
 document.getElementById("detailAddSpecialPromoBtn")?.addEventListener("click",()=>addDetailSpecialPromoRow());
 document.getElementById("detailAddGiftBtn")?.addEventListener("click",()=>addDetailGiftRow());
