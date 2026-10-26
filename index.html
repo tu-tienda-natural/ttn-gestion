@@ -11841,61 +11841,13 @@ document.getElementById("ventasNav")?.click();
   restoreUiStateAfterReload();
  }
 
- let javierAutoRetryRunning=false;
  window.loginUser=async function(){
   const password=String(document.getElementById("loginPassword")?.value||"");
-  const username=selectedUsername();
   const u=selectedCloudUser();
   if(!password){ setLoginMsg("Escribe tu contraseña."); return; }
+
   setLoginMsg("Conectando…",false);
-
-  let {data,error}=await cloud.auth.signInWithPassword({email:u.email,password});
-
-  if(error && username==="javier"){
-   const msg=String(error.message||"").toLowerCase();
-   if(msg.includes("invalid login credentials") || msg.includes("user not found") || msg.includes("email not confirmed")){
-    setLoginMsg("Creando acceso de Javier…",false);
-    const signup=await cloud.auth.signUp({
-     email:u.email,
-     password,
-     options:{data:{full_name:"Javier"}}
-    });
-    if(signup.error){
-     const raw=String(signup.error.message||"");
-     const m=raw.match(/after\s+(\d+)\s+seconds?/i);
-     if(m){
-      if(javierAutoRetryRunning) return;
-      javierAutoRetryRunning=true;
-      let secs=Math.max(1,Number(m[1])||60);
-      const btn=document.getElementById("loginBtn") || document.querySelector("#loginOverlay button");
-      if(btn) btn.disabled=true;
-
-      const tick=()=>{
-       if(secs>0){
-        setLoginMsg(`Supabase activó una protección temporal. Reintentando automáticamente en ${secs} segundo${secs===1?"":"s"}…`,false);
-        secs--;
-        setTimeout(tick,1000);
-        return;
-       }
-       if(btn) btn.disabled=false;
-       javierAutoRetryRunning=false;
-       setLoginMsg("Reintentando acceso de Javier…",false);
-       window.loginUser();
-      };
-      tick();
-      return;
-     }
-     setLoginMsg("No se pudo crear el acceso de Javier. Intenta nuevamente.");
-     return;
-    }
-    if(!signup.data?.session){
-     setLoginMsg("La cuenta de Javier quedó creada. Debe confirmar el correo que Supabase envió a rcnjota@gmail.com y después ingresar con la misma contraseña.");
-     return;
-    }
-    data=signup.data;
-    error=null;
-   }
-  }
+  const {data,error}=await cloud.auth.signInWithPassword({email:u.email,password});
 
   if(error){
    setLoginMsg("No fue posible ingresar. Verifica la contraseña.");
