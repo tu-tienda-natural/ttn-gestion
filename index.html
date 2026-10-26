@@ -1686,6 +1686,21 @@ body{
  }
 }
 
+
+/* ===== V261: Javier jefe solo lectura ===== */
+.javier-readonly-badge{
+ display:inline-flex;
+ margin-top:4px;
+ padding:3px 7px;
+ border-radius:999px;
+ border:1px solid rgba(255,255,255,.28);
+ background:rgba(255,255,255,.10);
+ color:#fff;
+ font-size:8px;
+ font-weight:950;
+ letter-spacing:.08em;
+}
+
 </style>
 
 <style>
@@ -1808,6 +1823,7 @@ body{
     <option value="laura">Laura</option>
     <option value="lina">Lina</option>
     <option value="natali">Natali</option>
+    <option value="javier">Javier</option>
    </select>
   </div>
 
@@ -4046,6 +4062,58 @@ function creationAudit(extra={}){
   updated_at:now
  };
 }
+
+function userIsReadOnly(){ return !!CURRENT_USER?.readOnly; }
+
+function readonlyMutationButton(btn){
+ if(!btn) return false;
+ const id=String(btn.id||"").toLowerCase();
+ const t=normalizeText(btn.textContent||btn.getAttribute("aria-label")||"");
+ if(id==="logoutbtn") return false;
+ const allow=["ver","detalle","historial","buscar","filtrar","anterior","siguiente","exportar","descargar","cerrar"];
+ if(allow.some(x=>t===x || t.startsWith(x+" "))) return false;
+ const mut=["agregar","crear","guardar","editar","eliminar","quitar","borrar","ajustar","registrar","pagar","despachar","cancelar","devolver","programar","actualizar","importar","subir","nuevo","nueva","marcar"];
+ return mut.some(x=>t.includes(x));
+}
+
+function applyReadOnlyUi(){
+ const ro=userIsReadOnly();
+ document.body.classList.toggle("ttn-readonly",ro);
+
+ document.querySelectorAll("[data-ro-hidden='1']").forEach(el=>{
+  el.style.display="";
+  delete el.dataset.roHidden;
+ });
+
+ if(!ro) return;
+
+ document.querySelectorAll("button,a,[role='button']").forEach(el=>{
+  if(readonlyMutationButton(el)){
+   el.dataset.roHidden="1";
+   el.style.display="none";
+  }
+ });
+
+ let badge=document.getElementById("javierReadOnlyBadge");
+ if(!badge){
+  badge=document.createElement("span");
+  badge.id="javierReadOnlyBadge";
+  badge.className="javier-readonly-badge";
+  badge.textContent="SOLO LECTURA";
+  document.getElementById("activeUserCard")?.appendChild(badge);
+ }
+}
+
+document.addEventListener("click",e=>{
+ if(!userIsReadOnly()) return;
+ const btn=e.target.closest?.("button,a,[role='button']");
+ if(readonlyMutationButton(btn)){
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  alert("Javier tiene acceso de solo lectura.");
+ }
+},true);
+
 function applyUserPermissions(){
  if(!CURRENT_USER) return;
  const name=document.getElementById("activeUserName");
@@ -4061,6 +4129,7 @@ function applyUserPermissions(){
  if(!CURRENT_USER.isAdmin && document.getElementById("settingsView")?.classList.contains("active")){
   document.getElementById("ventasNav")?.click();
  }
+ setTimeout(applyReadOnlyUi,0);
 }
 function loginUser(){
  const username=document.getElementById("loginUser").value;
@@ -11510,9 +11579,10 @@ document.getElementById("ventasNav")?.click();
  const SUPABASE_URL="https://qnkruoszwburpznecowh.supabase.co";
  const SUPABASE_KEY="sb_publishable_J-2tUEweABLZRDLQhp_L7w_wN4uVjJ8";
  const CLOUD_USERS={
-  laura:{email:"rivera99lau@gmail.com",name:"Laura",role:"Administradora",isAdmin:true},
-  lina:{email:"brs.auxiliar@gmail.com",name:"Lina",role:"Operadora",isAdmin:false},
-  natali:{email:"brstalentohumano@gmail.com",name:"Natali",role:"Operadora",isAdmin:false}
+  laura:{email:"rivera99lau@gmail.com",name:"Laura",role:"Administradora",isAdmin:true,readOnly:false},
+  lina:{email:"brs.auxiliar@gmail.com",name:"Lina",role:"Operadora",isAdmin:false,readOnly:false},
+  natali:{email:"brstalentohumano@gmail.com",name:"Natali",role:"Operadora",isAdmin:false,readOnly:false},
+  javier:{email:"rcnjota@gmail.com",name:"Javier",role:"Solo lectura",isAdmin:false,readOnly:true}
  };
  const CLOUD_KEYS=new Set([
   "brs_tienda_natural_accounting_movements_v1",
@@ -11645,6 +11715,7 @@ document.getElementById("ventasNav")?.click();
  }
 
  async function schedulePush(key,raw){
+  if(CURRENT_USER?.readOnly) return;
   if(pendingPush.has(key)) clearTimeout(pendingPush.get(key));
   pendingPush.set(key,setTimeout(async()=>{
    pendingPush.delete(key);
@@ -11661,7 +11732,7 @@ document.getElementById("ventasNav")?.click();
  }
 
  async function seedCloudFromLocal(){
-  if(!activeAuthUser) return;
+  if(!activeAuthUser || CURRENT_USER?.readOnly) return;
   const rows=[];
   CLOUD_KEYS.forEach(key=>{
    const raw=localStorage.getItem(key);
@@ -11732,11 +11803,13 @@ document.getElementById("ventasNav")?.click();
 
  function applyCloudProfile(profile){
   const isAdmin=profile.role==="admin";
+  const readOnly=profile.role==="viewer";
   CURRENT_USER={
    username:profile.username,
    name:profile.full_name,
-   role:isAdmin?"Administradora":"Operadora",
-   isAdmin
+   role:isAdmin?"Administradora":readOnly?"Jefe · Solo lectura":"Operadora",
+   isAdmin,
+   readOnly
   };
   localStorage.setItem(APP_SESSION_KEY,JSON.stringify(CURRENT_USER));
   applyUserPermissions();
@@ -11768,16 +11841,67 @@ document.getElementById("ventasNav")?.click();
   restoreUiStateAfterReload();
  }
 
+ let javierAutoRetryRunning=false;
  window.loginUser=async function(){
   const password=String(document.getElementById("loginPassword")?.value||"");
+  const username=selectedUsername();
   const u=selectedCloudUser();
   if(!password){ setLoginMsg("Escribe tu contraseña."); return; }
   setLoginMsg("Conectando…",false);
-  const {data,error}=await cloud.auth.signInWithPassword({email:u.email,password});
+
+  let {data,error}=await cloud.auth.signInWithPassword({email:u.email,password});
+
+  if(error && username==="javier"){
+   const msg=String(error.message||"").toLowerCase();
+   if(msg.includes("invalid login credentials") || msg.includes("user not found") || msg.includes("email not confirmed")){
+    setLoginMsg("Creando acceso de Javier…",false);
+    const signup=await cloud.auth.signUp({
+     email:u.email,
+     password,
+     options:{data:{full_name:"Javier"}}
+    });
+    if(signup.error){
+     const raw=String(signup.error.message||"");
+     const m=raw.match(/after\s+(\d+)\s+seconds?/i);
+     if(m){
+      if(javierAutoRetryRunning) return;
+      javierAutoRetryRunning=true;
+      let secs=Math.max(1,Number(m[1])||60);
+      const btn=document.getElementById("loginBtn") || document.querySelector("#loginOverlay button");
+      if(btn) btn.disabled=true;
+
+      const tick=()=>{
+       if(secs>0){
+        setLoginMsg(`Supabase activó una protección temporal. Reintentando automáticamente en ${secs} segundo${secs===1?"":"s"}…`,false);
+        secs--;
+        setTimeout(tick,1000);
+        return;
+       }
+       if(btn) btn.disabled=false;
+       javierAutoRetryRunning=false;
+       setLoginMsg("Reintentando acceso de Javier…",false);
+       window.loginUser();
+      };
+      tick();
+      return;
+     }
+     setLoginMsg("No se pudo crear el acceso de Javier. Intenta nuevamente.");
+     return;
+    }
+    if(!signup.data?.session){
+     setLoginMsg("La cuenta de Javier quedó creada. Debe confirmar el correo que Supabase envió a rcnjota@gmail.com y después ingresar con la misma contraseña.");
+     return;
+    }
+    data=signup.data;
+    error=null;
+   }
+  }
+
   if(error){
-   setLoginMsg("No fue posible ingresar. Verifica la contraseña o confirma que tu cuenta ya fue creada por la administración.");
+   setLoginMsg("No fue posible ingresar. Verifica la contraseña.");
    return;
   }
+
   try{
    await completeCloudLogin(data.user);
    const pass=document.getElementById("loginPassword"); if(pass) pass.value="";
