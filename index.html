@@ -2413,7 +2413,7 @@ body{
   <div class="panelhead" style="align-items:flex-end">
    <div>
     <h2 style="font-size:18px">Movimientos registrados</h2>
-    <div class="sub">Lo más reciente aparece primero. El control de hora exacta comienza desde esta versión.</div>
+    <div class="sub">Lo más reciente aparece primero. El historial se guarda en línea y es compartido entre todos los equipos.</div>
    </div>
    <input id="historySearch" placeholder="Buscar movimiento..." style="min-width:220px">
    <select id="historyUserFilter" style="min-width:145px">
@@ -2421,6 +2421,7 @@ body{
     <option value="Laura">Laura</option>
     <option value="Lina">Lina</option>
     <option value="Natali">Natali</option>
+    <option value="Javier">Javier</option>
    </select>
    <select id="historyModuleFilter" style="min-width:160px">
     <option value="">Todos los módulos</option>
@@ -3926,23 +3927,32 @@ function loadActivityHistory(){
 function saveActivityHistory(rows){
  localStorage.setItem(ACTIVITY_LOG_KEY,JSON.stringify(rows));
 }
+function makeActivityUuid(){
+ if(window.crypto?.randomUUID) return window.crypto.randomUUID();
+ return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{
+  const r=Math.random()*16|0, v=c==="x"?r:(r&0x3|0x8);
+  return v.toString(16);
+ });
+}
 function logActivity(module,action,detail=""){
  const user=currentUserName();
- if(!user || user==="Sin usuario") return;
- const rows=loadActivityHistory();
- rows.push({
-  id:Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7),
+ if(!user || user==="Sin usuario") return null;
+ const row={
+  id:makeActivityUuid(),
   timestamp:new Date().toISOString(),
   user,
   username:currentUserUsername(),
   module,
   action,
   detail:String(detail||"")
- });
- // Keep a large but bounded audit trail in the local prototype.
+ };
+ const rows=loadActivityHistory();
+ rows.push(row);
  if(rows.length>10000) rows.splice(0,rows.length-10000);
  saveActivityHistory(rows);
+ try{ window.TTN_PUSH_ACTIVITY?.(row); }catch(e){ console.warn("No se pudo enviar auditoría",e); }
  if(document.getElementById("historyView")?.classList.contains("active")) renderHistory();
+ return row;
 }
 function formatHistoryDate(ts){
  const d=new Date(ts);
@@ -3985,6 +3995,7 @@ function applyCurrentDateDefaults(){
 function renderHistory(){
  const body=document.getElementById("historyBody");
  if(!body) return;
+ try{ window.TTN_REFRESH_ACTIVITY?.(); }catch(e){}
 
  const q=String(document.getElementById("historySearch")?.value||"").trim().toLowerCase();
  const user=document.getElementById("historyUserFilter")?.value||"";
@@ -11597,8 +11608,7 @@ document.getElementById("ventasNav")?.click();
   "brs_tienda_natural_inventory_v1",
   "brs_tienda_natural_manual_sales_v1",
   "brs_tienda_natural_promo_schedule_v1",
-  "brs_tienda_natural_sale_updates_v1",
-  "ttn_activity_history_v1"
+  "brs_tienda_natural_sale_updates_v1"
  ]);
 
  if(!window.supabase || !window.supabase.createClient){
@@ -11616,6 +11626,69 @@ document.getElementById("ventasNav")?.click();
  let activeAuthUser=null;
  let realtimeChannel=null;
  const pendingPush=new Map();
+ let activityRefreshInFlight=false;
+ let activityLastRefresh=0;
+
+ function cloudActivityToLocal(row){
+  return {
+   id:row.id,
+   timestamp:row.created_at,
+   user:row.user_name||"Sin usuario",
+   username:"",
+   module:row.module||"General",
+   action:row.action||"Movimiento",
+   detail:row.detail||""
+  };
+ }
+
+ async function pullCloudActivityHistory(force=false){
+  if(!activeAuthUser) return;
+  const now=Date.now();
+  if(activityRefreshInFlight) return;
+  if(!force && now-activityLastRefresh<4000) return;
+  activityRefreshInFlight=true;
+  try{
+   const {data,error}=await cloud
+    .from("activity_log")
+    .select("id,user_id,user_name,module,action,detail,created_at")
+    .order("created_at",{ascending:true})
+    .limit(10000);
+   if(error) throw error;
+   const rows=(data||[]).map(cloudActivityToLocal);
+   nativeSetItem.call(localStorage,ACTIVITY_LOG_KEY,JSON.stringify(rows));
+   activityLastRefresh=Date.now();
+   if(document.getElementById("historyView")?.classList.contains("active")) renderHistory();
+  }catch(e){
+   console.warn("No se pudo actualizar el historial compartido",e);
+  }finally{
+   activityRefreshInFlight=false;
+  }
+ }
+
+ window.TTN_REFRESH_ACTIVITY=()=>pullCloudActivityHistory(false);
+
+ window.TTN_PUSH_ACTIVITY=async function(row){
+  if(!activeAuthUser || !row) return;
+  try{
+   const payload={
+    id:row.id,
+    user_id:activeAuthUser.id,
+    user_name:row.user||currentUserName(),
+    module:row.module||"General",
+    action:row.action||"Movimiento",
+    detail:row.detail||null,
+    created_at:row.timestamp||new Date().toISOString()
+   };
+   const {error}=await cloud.from("activity_log").insert(payload);
+   if(error){
+    // Si el mismo evento ya se guardó, no duplicarlo.
+    if(String(error.code||"")!=="23505") throw error;
+   }
+   activityLastRefresh=Date.now();
+  }catch(e){
+   console.warn("No se pudo guardar el movimiento en Supabase",e);
+  }
+ };
 
  const nativeSetItem=Storage.prototype.setItem;
  Storage.prototype.setItem=function(key,value){
@@ -11773,6 +11846,18 @@ document.getElementById("ventasNav")?.click();
  function subscribeRealtime(){
   if(realtimeChannel) cloud.removeChannel(realtimeChannel);
   realtimeChannel=cloud.channel("ttn:shared:state")
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"activity_log"},payload=>{
+    const row=payload.new;
+    if(!row) return;
+    const mapped=cloudActivityToLocal(row);
+    const rows=loadActivityHistory();
+    if(!rows.some(x=>x.id===mapped.id)){
+     rows.push(mapped);
+     if(rows.length>10000) rows.splice(0,rows.length-10000);
+     nativeSetItem.call(localStorage,ACTIVITY_LOG_KEY,JSON.stringify(rows));
+     if(document.getElementById("historyView")?.classList.contains("active")) renderHistory();
+    }
+   })
    .on("postgres_changes",{event:"*",schema:"public",table:"app_state"},payload=>{
     const row=payload.new||payload.old;
     if(!row || !CLOUD_KEYS.has(row.state_key) || typeof row.state_value==="undefined") return;
@@ -11817,7 +11902,7 @@ document.getElementById("ventasNav")?.click();
   if(overlay) overlay.style.display="none";
  }
 
- async function completeCloudLogin(user,{reloadIfChanged=true}={}){
+ async function completeCloudLogin(user,{reloadIfChanged=true,recordLogin=false}={}){
   const profile=await profileFor(user);
   if(profile.blocked){
    await cloud.auth.signOut();
@@ -11828,8 +11913,11 @@ document.getElementById("ventasNav")?.click();
   applyCloudProfile(profile);
   const changed=await pullCloudState();
   window.TTN_CLOUD_READY=true;
+  await pullCloudActivityHistory(true);
   subscribeRealtime();
-  try{ logActivity("Seguridad","Inicio de sesión","Ingreso al sistema en línea"); }catch(e){}
+  if(recordLogin){
+   try{ logActivity("Seguridad","Inicio de sesión","Ingreso al sistema en línea"); }catch(e){}
+  }
   if(changed && reloadIfChanged){
    // DATA se construye al cargar la página. Si la nube trajo ventas nuevas,
    // recargamos una sola vez para reconstruir meses, totales y detalle desde localStorage.
@@ -11855,7 +11943,7 @@ document.getElementById("ventasNav")?.click();
   }
 
   try{
-   await completeCloudLogin(data.user);
+   await completeCloudLogin(data.user,{recordLogin:true});
    const pass=document.getElementById("loginPassword"); if(pass) pass.value="";
    setLoginMsg("");
   }catch(e){
@@ -11907,7 +11995,7 @@ document.getElementById("ventasNav")?.click();
    try{
     const reloaded=sessionStorage.getItem("ttn_cloud_restore_after_reload")==="1";
     sessionStorage.removeItem("ttn_cloud_restore_after_reload");
-    await completeCloudLogin(data.session.user,{reloadIfChanged:!reloaded});
+    await completeCloudLogin(data.session.user,{reloadIfChanged:!reloaded,recordLogin:false});
    }catch(e){
     console.error(e);
     await cloud.auth.signOut();
