@@ -1928,13 +1928,7 @@ body{
   </div>
 
   <div class="kpis" id="monthKpis"></div>
-  <div id="weeklySalesPanel">
-   <div class="weekly-sales-head">
-    <div class="weekly-sales-title">Ventas por semana</div>
-    <div class="weekly-sales-note">No incluye ventas canceladas ni devueltas</div>
-   </div>
-   <div id="weeklySalesCards"></div>
-  </div>
+
 
   <div class="tablewrap">
    <table>
@@ -5761,73 +5755,6 @@ const rawRows=getRowsForYearMonth(selectedYear,selectedMonth);
   ["Saldo pendiente",COP(pendingPayment)]
  ].map(x=>`<div class="kpi"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join("");
 
- // V246: resumen real de ventas por semana (lunes a domingo).
- const weeklyRows=rows.filter(x=>{
-  if(x._deleted) return false;
-  const st=orderStatusKey(x);
-  return st!=="cancelled" && st!=="returned";
- });
-
- function localDateFromKey(key){
-  const m=String(key||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return null;
-  return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0,0);
- }
- function dateKeyLocal(d){
-  return [
-   d.getFullYear(),
-   String(d.getMonth()+1).padStart(2,"0"),
-   String(d.getDate()).padStart(2,"0")
-  ].join("-");
- }
- function shortDate(d){
-  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
- }
-
- const firstOfMonth=new Date(Number(selectedYear),Number(selectedMonth)-1,1,12,0,0,0);
- const lastOfMonth=new Date(Number(selectedYear),Number(selectedMonth),0,12,0,0,0);
- const firstMonday=new Date(firstOfMonth);
- const mondayOffset=(firstMonday.getDay()+6)%7;
- firstMonday.setDate(firstMonday.getDate()-mondayOffset);
-
- const weekCards=[];
- let weekStart=new Date(firstMonday);
- let weekNum=1;
- while(weekStart<=lastOfMonth){
-  const weekEnd=new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate()+6);
-
-  const visibleStart=weekStart<firstOfMonth ? new Date(firstOfMonth) : new Date(weekStart);
-  const visibleEnd=weekEnd>lastOfMonth ? new Date(lastOfMonth) : new Date(weekEnd);
-
-  const weekSales=weeklyRows.filter(x=>{
-   const d=localDateFromKey(x.date);
-   return d && d>=weekStart && d<=weekEnd;
-  });
-  const weekTotal=weekSales.reduce((a,b)=>a+Number(b.sale||0),0);
-
-  weekCards.push({
-   name:`Semana ${weekNum}`,
-   range:`${shortDate(visibleStart)} al ${shortDate(visibleEnd)}`,
-   total:weekTotal,
-   count:weekSales.length
-  });
-
-  weekStart.setDate(weekStart.getDate()+7);
-  weekNum++;
- }
-
- const weeklySalesCards=document.getElementById("weeklySalesCards");
- if(weeklySalesCards){
-  weeklySalesCards.innerHTML=weekCards.map(w=>`
-   <div class="week-card">
-    <div class="week-name">${w.name}</div>
-    <div class="week-range">${w.range}</div>
-    <div class="week-value">${COP(w.total)}</div>
-    <div class="week-count">${w.count} venta${w.count===1?"":"s"} efectiva${w.count===1?"":"s"}</div>
-   </div>
-  `).join("");
- }
 
  document.getElementById("salesBody").innerHTML=filtered.map(x=>{
   const idx=Number(x._index||0);
