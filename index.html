@@ -1701,6 +1701,51 @@ body{
  letter-spacing:.08em;
 }
 
+
+/* ===== V265: novedades visibles por cliente ===== */
+.sale-news-panel{
+ border:1px solid #d7e4db;
+ background:#f8fcf9;
+ border-radius:12px;
+ padding:12px;
+}
+.sale-news-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:10px;
+}
+.sale-news-title{
+ font-weight:950;
+ color:#14532d;
+ font-size:15px;
+}
+#saleNewsRows:empty::before,
+#detailNewsRows:empty::before{
+ content:"No hay novedades registradas.";
+ display:block;
+ color:#64748b;
+ font-size:12px;
+ padding:6px 2px 2px;
+}
+#saleNewsRows:not(:empty)::before,
+#detailNewsRows:not(:empty)::before{
+ content:none;
+}
+.detail-news-row{
+ display:grid;
+ grid-template-columns:150px minmax(0,1fr) auto;
+ gap:8px;
+ align-items:end;
+ margin-bottom:8px;
+}
+@media(max-width:700px){
+ .sale-news-head{align-items:flex-start;flex-direction:column}
+ .sale-news-head .btn{width:100%}
+ .detail-news-row{grid-template-columns:1fr}
+}
+
 </style>
 
 <style>
@@ -3419,7 +3464,16 @@ body{
     </div>
   </div>
 
-  <div id="saleNewsRows" style="display:none"></div>
+  <div class="sale-news-panel" style="margin-top:14px">
+   <div class="sale-news-head">
+    <div>
+     <div class="sale-news-title">Novedades del cliente</div>
+     <div class="sub">Registra llamadas, acuerdos, cambios o cualquier dato importante del pedido.</div>
+    </div>
+    <button id="addNewsBtn" type="button" class="btn">+ Agregar novedad</button>
+   </div>
+   <div id="saleNewsRows"></div>
+  </div>
 
   <datalist id="colombiaCityOptions"></datalist>
   <div id="saleMsg" class="sub" style="margin-top:10px"></div>
@@ -3562,7 +3616,16 @@ body{
    </div>
   </div>
 
-  <div id="detailNewsRows" style="display:none"></div>
+  <div class="sale-news-panel" style="margin-top:14px">
+   <div class="sale-news-head">
+    <div>
+     <div class="sale-news-title">Novedades del cliente</div>
+     <div class="sub">Aquí puedes registrar una nueva gestión sin borrar las novedades anteriores.</div>
+    </div>
+    <button id="detailAddNewsBtn" type="button" class="btn">+ Agregar novedad</button>
+   </div>
+   <div id="detailNewsRows"></div>
+  </div>
 
   <div id="saleDetailMsg" class="sub" style="margin-top:8px"></div>
   <div class="actions" style="justify-content:space-between">
